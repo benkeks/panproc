@@ -1,0 +1,14 @@
+{
+  "name": "panproc",
+  "version": "0.0.1",
+  "description": "Working with process specifications",
+  "devDependencies": {
+    "typescript": "4.8.4"
+  },
+  "dependencies": {
+    "@types/cytoscape": "3.19",
+    "cytoscape": "3.19"
+  },
+  "scripts": {
+  }
+}

@@ -1,2 +1,14 @@
 *.class
 *.log
+*#
+*~
+*.bak
+out
+target
+.lib
+node_modules
+.metals
+.vscode
+.bloop
+metals.sbt
+.bsp
