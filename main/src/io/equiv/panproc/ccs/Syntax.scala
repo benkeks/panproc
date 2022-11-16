@@ -24,10 +24,25 @@ object Syntax {
 
   }
 
-  abstract sealed class ProcessExpression() extends Expression() with CCS
+  abstract sealed class ProcessExpression() extends Expression():
+
+    def asContext(insertion: ProcessExpression): ProcessExpression
+
+    infix def +(other: ProcessExpression) =
+      Choice(List(this, other))
+
+    infix def |(other: ProcessExpression) =
+      Parallel(List(this, other))
+
+    infix def ?:(name: String) =
+      Prefix(Label(name), this)
+
+    infix def !:(name: String) =
+      Prefix(Label(name).toOutput, this)
+
   
   case class Prefix(val l: Label, val proc: ProcessExpression)
-    extends ProcessExpression() with CCS {
+    extends ProcessExpression() {
     
     override def toString() = {
       val ps = proc.toString()
@@ -38,12 +53,9 @@ object Syntax {
       }
     }
 
-
-    override def receive(name: String): ProcessExpression =
-      Prefix(l, super.receive(name))
-
-    override def stop(): ProcessExpression =
-      Prefix(l, super.stop())
+    override def asContext(insertion: ProcessExpression): ProcessExpression =
+      println(insertion)
+      Prefix(l, insertion)
   }
 
   case class Choice(val procs: List[ProcessExpression]) extends ProcessExpression() {
@@ -54,6 +66,9 @@ object Syntax {
       val str = procs.mkString(" + ")
       if (str.contains("|")) "(" + str + ")" else str
     }
+
+    override def asContext(insertion: ProcessExpression): ProcessExpression =
+      Choice(procs :+ insertion)
   }
 
   def NullProcess() = Choice(Nil)
@@ -65,6 +80,9 @@ object Syntax {
     } else {
       procs.mkString(" | ")
     }
+
+    override def asContext(insertion: ProcessExpression): ProcessExpression =
+      Parallel(procs :+ insertion)
   }
 
     case class Restrict(val names: List[Label], val proc: ProcessExpression) extends ProcessExpression() {
@@ -73,10 +91,15 @@ object Syntax {
       val ps = proc.toString()
       (if (ps.contains(" ")) "(" + ps + ")" else ps) + names.mkString(" \\ {",",","}")
     }
+
+    override def asContext(insertion: ProcessExpression): ProcessExpression =
+      Restrict(names, insertion)
   }
 
   case class ProcessName(val l: Label) extends ProcessExpression() {
     override def toString() = l.toString
+
+    override def asContext(insertion: ProcessExpression): ProcessExpression = this
   }
 
   
@@ -92,19 +115,4 @@ object Syntax {
     }
   }
 
-
-  // Builder
-  trait CCS {
-
-    def receive(name: String): ProcessExpression =
-      Prefix(Label(name), NullProcess())
-
-    def stop(): ProcessExpression =
-      NullProcess()
-
-  }
-
-  class Build() extends CCS
-
-  
 }
