@@ -7,5 +7,5 @@ import io.equiv.panproc.ccs.Syntax.NullProcess
   println("Hello")
 
   println(
-    "w" ?: ("x" ?: ("y" !: "z" ?: NullProcess()) + "y" ?: NullProcess()) | "x" ?: NullProcess()
+    "w" *: ("x" *: "y" *: "z" *: NullProcess() + "y" *: NullProcess()) | "x" *: NullProcess()
   )
