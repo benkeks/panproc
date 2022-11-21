@@ -6,14 +6,14 @@ object Semantics:
   type Env = Map[String, Syntax.ProcessExpression]
   type ProcLabel = Unit
 
-class Semantics
+class Semantics(mainExpr: Syntax.ProcessExpression)
     extends AbstractOperationalSemantics[
       Syntax.ProcessExpression,
       Semantics.Env,
       Syntax.ProcessExpression,
       Syntax.Label,
       Semantics.ProcLabel
-    ]:
+    ](mainExpr):
 
   import Semantics.*
 

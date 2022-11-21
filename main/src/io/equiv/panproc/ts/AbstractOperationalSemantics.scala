@@ -2,7 +2,7 @@ package io.equiv.panproc.ts
 
 import io.equiv.panproc.relations.LabeledRelation
 
-trait AbstractOperationalSemantics[E, Env, S, A, L]:
+trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
 
   def stateIds(expr: E): S
 
@@ -13,7 +13,11 @@ trait AbstractOperationalSemantics[E, Env, S, A, L]:
   val transitions = collection.mutable.Map[S, List[(A, S)]]()
   private val todo = collection.mutable.Buffer[E]()
 
-  def semantics(mainExpr: E): (LabeledRelation[S, A], Map[S, L]) =
+  def asTransitionSystem() =
+    val (steps, nodes) = semantics()
+    TransitionSystem(steps, nodes)
+
+  def semantics(): (LabeledRelation[S, A], Map[S, L]) =
     val (procEnv, initialProcs) = globalEnvironment(mainExpr)
 
     initialProcs.foreach(scheduleConversion)
