@@ -78,10 +78,10 @@ object Syntax:
       Restrict(names, insertion)
 
   case class ProcessName(val l: Name) extends ProcessExpression():
-    override def toString()                                                 = l.toString
+    override def toString() = l.toString
     override def asContext(insertion: ProcessExpression): ProcessExpression = this
 
-  case class Definition(val defs: List[ProcessDeclaration], val mains: List[ProcessExpression])
+  case class Definition(val defs: List[ProcessDeclaration], val main: List[ProcessExpression])
       extends ProcessExpression():
     def getDeclaration(processID: String): Option[ProcessDeclaration] =
       defs collectFirst {
@@ -89,4 +89,4 @@ object Syntax:
       }
 
     def asContext(insertion: ProcessExpression): ProcessExpression =
-      Definition(defs, mains :+ insertion)
+      Definition(defs, main :+ insertion)
