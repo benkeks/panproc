@@ -1,7 +1,5 @@
 package io.equiv.panproc.lambda
 
-import org.w3c.dom.Notation
-
 object Syntax:
 
   abstract sealed class Expression:

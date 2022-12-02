@@ -7,7 +7,6 @@ import io.equiv.panproc.ccs.Semantics
 import io.equiv.panproc.lambda
 import io.equiv.panproc.lambda.Syntax.Notation._
 
-
 @main def panproc() =
   println("Hello")
 
