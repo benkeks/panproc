@@ -1,17 +1,16 @@
 package io.equiv.panproc.ccs
 
+import io.equiv.panproc.lambda
+import io.equiv.panproc.lambda.Syntax.Expression
+import io.equiv.panproc.lambda.Syntax.Literal
+
 object Syntax:
-
-  abstract sealed class Expression()
-
-  case class ProcessDeclaration(name: String, process: ProcessExpression) extends Expression():
-    override def toString() = name + " = " + process.toString()
 
   case class Name(name: String):
     override def toString() = name
 
-  abstract class Label(name: Name) extends Expression():
-    override def toString() = name.name
+  abstract class Label(name: Name) extends Literal():
+    override def pretty = name.name
 
   case class Send(name: Name) extends Label(name)
 
@@ -19,74 +18,61 @@ object Syntax:
 
   case class Internal() extends Label(Name("tau"))
 
-  abstract sealed class ProcessExpression() extends Expression():
+  abstract sealed class ProcessExpression() extends Literal():
 
-    def asContext(insertion: ProcessExpression): ProcessExpression
+    def asContext(insertion: Expression): ProcessExpression
 
-    infix def +(other: ProcessExpression) =
+    infix def +(other: Expression) =
       Choice(List(this, other))
 
-    infix def |(other: ProcessExpression) =
+    infix def |(other: Expression) =
       Parallel(List(this, other))
 
     infix def *:(name: String) =
       Prefix(Send(Name(name)), this)
 
-  case class Prefix(val l: Label, val proc: ProcessExpression) extends ProcessExpression():
+  case class Prefix(val l: Label, val proc: Expression) extends ProcessExpression():
 
-    override def toString() =
-      val ps = proc.toString()
-      l.toString + "." + (if ps.contains(" ") then "(" + ps + ")" else ps)
+    override def pretty =
+      val ps = proc.pretty
+      l.pretty + "." + (if ps.contains(" ") then "(" + ps + ")" else ps)
 
-    override def asContext(insertion: ProcessExpression): ProcessExpression =
+    override def asContext(insertion: Expression): ProcessExpression =
       println(insertion)
       Prefix(l, insertion)
 
-  case class Choice(val procs: List[ProcessExpression]) extends ProcessExpression():
+  case class Choice(val procs: List[Expression]) extends ProcessExpression():
 
-    override def toString() =
+    override def pretty =
       if procs.isEmpty then
         "0"
       else
-        val str = procs.mkString(" + ")
+        val str = procs.map(_.pretty).mkString(" + ")
         if str.contains("|") then "(" + str + ")" else str
 
-    override def asContext(insertion: ProcessExpression): ProcessExpression =
+    override def asContext(insertion: Expression): ProcessExpression =
       Choice(procs :+ insertion)
 
   def NullProcess() = Choice(Nil)
+  def RecProc(name: String) = Choice(List(lambda.Syntax.Variable(lambda.Syntax.Name(name))))
 
-  case class Parallel(val procs: List[ProcessExpression]) extends ProcessExpression():
+  case class Parallel(val procs: List[Expression]) extends ProcessExpression():
 
-    override def toString() =
+    override def pretty =
       if procs.isEmpty then
         "0"
       else
-        procs.mkString(" | ")
+        procs.map(_.pretty).mkString(" | ")
 
-    override def asContext(insertion: ProcessExpression): ProcessExpression =
+    override def asContext(insertion: Expression): ProcessExpression =
       Parallel(procs :+ insertion)
 
-  case class Restrict(val names: List[Name], val proc: ProcessExpression)
+  case class Restrict(val names: List[Name], val proc: Expression)
       extends ProcessExpression():
 
-    override def toString() =
-      val ps = proc.toString()
+    override def pretty =
+      val ps = proc.pretty
       (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" \\ {", ",", "}")
 
-    override def asContext(insertion: ProcessExpression): ProcessExpression =
+    override def asContext(insertion: Expression): ProcessExpression =
       Restrict(names, insertion)
-
-  case class ProcessName(val l: Name) extends ProcessExpression():
-    override def toString() = l.toString
-    override def asContext(insertion: ProcessExpression): ProcessExpression = this
-
-  case class Definition(val defs: List[ProcessDeclaration], val main: List[ProcessExpression])
-      extends ProcessExpression():
-    def getDeclaration(processID: String): Option[ProcessDeclaration] =
-      defs collectFirst {
-        case pd @ ProcessDeclaration(n, _) if n == processID => pd
-      }
-
-    def asContext(insertion: ProcessExpression): ProcessExpression =
-      Definition(defs, main :+ insertion)

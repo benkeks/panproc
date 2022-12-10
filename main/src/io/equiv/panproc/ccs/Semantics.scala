@@ -1,41 +1,25 @@
 package io.equiv.panproc.ccs
 
 import io.equiv.panproc.ts.AbstractOperationalSemantics
+import io.equiv.panproc.lambda.CallByValueSemantics
+import io.equiv.panproc.lambda.Syntax.Expression
 
 object Semantics:
-  type Env = Map[String, Syntax.ProcessExpression]
-  type ProcLabel = String
+  case class Action(action: Syntax.Label) extends CallByValueSemantics.EdgeLabel
 
-class Semantics(mainExpr: Syntax.ProcessExpression)
-    extends AbstractOperationalSemantics[
-      Syntax.ProcessExpression,
-      Semantics.Env,
-      Syntax.ProcessExpression,
-      Syntax.Label,
-      Semantics.ProcLabel
-    ](mainExpr):
+class Semantics(mainExpr: Expression)
+    extends CallByValueSemantics(mainExpr):
 
   import Semantics.*
+  import CallByValueSemantics.*
 
-  override def stateIds(ex: Syntax.ProcessExpression) = ex
-
-  override def stateLabel(ex: Syntax.ProcessExpression) = ex.toString()
-
-  override def globalEnvironment(ccsDef: Syntax.ProcessExpression)
-      : (Env, Iterable[Syntax.ProcessExpression]) =
-    val procDefs = ccsDef.asInstanceOf[Syntax.Definition].defs.collect {
-      case d @ Syntax.ProcessDeclaration(name, proc) =>
-        (name, proc)
-    }.toMap
-    (procDefs, procDefs.values)
-
-  override def localSemantics(procEnv: Env)(e: Syntax.ProcessExpression)
-      : List[(Syntax.Label, Syntax.ProcessExpression)] =
+  override def localSemantics(env: Environment)(e: Expression)
+      : List[(EdgeLabel, Expression)] =
     e match
       case Syntax.Prefix(l, proc) =>
-        List((l, proc))
+        List((Action(l), proc))
       case Syntax.Choice(procs) =>
-        procs.flatMap(localSemantics(procEnv)(_))
+        procs.flatMap(localSemantics(env)(_))
       case Syntax.Parallel(procs) =>
         List()
       // val initialSteps = procs.map(localSemantics(procEnv)(_))
@@ -71,13 +55,8 @@ class Semantics(mainExpr: Syntax.ProcessExpression)
       case Syntax.Restrict(names, proc) =>
         val aNames = names.map(_.name)
         for
-          (a, p) <- localSemantics(procEnv)(proc)
+          (a, p) <- localSemantics(env)(proc)
           if !aNames.contains(a)
         yield (a, Syntax.Restrict(names, p))
-      case Syntax.ProcessName(l) =>
-        localSemantics(procEnv)(
-          procEnv.getOrElse(
-            l.name,
-            Syntax.NullProcess()
-          )
-        )
+      case other =>
+        super.localSemantics(env)(other)

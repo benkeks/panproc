@@ -4,11 +4,13 @@ import io.equiv.panproc.ts.AbstractOperationalSemantics
 import io.equiv.panproc.lambda.Syntax.*
 
 object CallByValueSemantics:
-  type EdgeLabel = Unit
+  abstract class EdgeLabel
+  case class InternalStep() extends EdgeLabel
+
   type NodeLabel = String
 
   // call-by-name defs parameter allows for gfp-style mkRec.
-  protected class Environment(defs: => Map[String, Expression], parent: Environment):
+  class Environment(defs: => Map[String, Expression], parent: Environment):
 
     def push(newDefs: => List[(String, Expression)]): Environment =
       Environment(newDefs.toMap, this)
@@ -72,14 +74,14 @@ class CallByValueSemantics(expr: Syntax.Expression)
     e match
       case el @ Lambda(variables, term) =>
         // bake lambdas into closures
-        List(() -> Bind(env, el))
+        List(InternalStep() -> Bind(env, el))
       case Variable(variable) =>
         for
           expr <- env.get(variable.name).toList
-        yield () -> expr
+        yield InternalStep() -> expr
       case Application(Bind(cEnv, Lambda(variable, term)), argument) if isValue(argument) =>
         List(
-          () -> Bind(cEnv.push(List(variable.name -> argument)), term)
+          InternalStep() -> Bind(cEnv.push(List(variable.name -> argument)), term)
         )
       case Application(function, argument) if isValue(function) =>
         for
@@ -95,7 +97,7 @@ class CallByValueSemantics(expr: Syntax.Expression)
           (l, e) <- localSemantics(mkRec(env, definitions))(in)
         yield (l, LetRec(definitions, e))
       case Bind(env, term) if isValue(term) =>
-        List(() -> term)
+        List(InternalStep() -> term)
       case  Bind(env, Lambda(_, _)) =>
         List()
       case Bind(env, term) =>
