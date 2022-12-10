@@ -6,6 +6,8 @@ trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
 
   def stateIds(expr: E): S
 
+  def stateLabel(s: S): L
+
   def globalEnvironment(mainExpr: E): (Env, Iterable[E])
 
   def localSemantics(procEnv: Env)(e: E): Iterable[(A, E)]
@@ -40,10 +42,13 @@ trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
         (a, s1) <- as1
       yield (s0, a, s1)
 
-    // val labelMap = nodeDecls.toMap
     val relation = new LabeledRelation(trans).filterReachable(interestingNodes.map(stateIds(_)))
+    val labelMap =
+      for
+        s <- relation.related
+      yield (s -> stateLabel(s))
 
-    (relation, Map())
+    (relation, labelMap.toMap)
 
   def scheduleConversion(e: E): S =
     val stateId = stateIds(e)

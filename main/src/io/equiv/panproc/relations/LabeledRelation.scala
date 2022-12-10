@@ -66,6 +66,7 @@ class LabeledRelation[E, L](val rep: Map[E, Map[L, Set[E]]]) {
   lazy val lhs = rep.keySet
   lazy val labels = rep.values.flatMap(_.keySet)
   lazy val rhs = rep.values.flatMap(_.values).flatten.toSet
+  lazy val related = lhs ++ rhs
 
   def merge(other: LabeledRelation[E, L]) =
     new LabeledRelation(tupleSet ++ other.tupleSet)

@@ -5,7 +5,7 @@ import io.equiv.panproc.lambda.Syntax.*
 
 object CallByValueSemantics:
   type EdgeLabel = Unit
-  type NodeLabel = Unit
+  type NodeLabel = String
 
   // call-by-name defs parameter allows for gfp-style mkRec.
   protected class Environment(defs: => Map[String, Expression], parent: Environment):
@@ -46,6 +46,8 @@ class CallByValueSemantics(expr: Syntax.Expression)
   import CallByValueSemantics.*
 
   override def stateIds(ex: Syntax.Expression) = ex
+
+  override def stateLabel(ex: Syntax.Expression) = ex.pretty
 
   override def globalEnvironment(expr: Syntax.Expression)
       : (Environment, Iterable[Syntax.Expression]) =

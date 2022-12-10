@@ -4,7 +4,7 @@ import io.equiv.panproc.ts.AbstractOperationalSemantics
 
 object Semantics:
   type Env = Map[String, Syntax.ProcessExpression]
-  type ProcLabel = Unit
+  type ProcLabel = String
 
 class Semantics(mainExpr: Syntax.ProcessExpression)
     extends AbstractOperationalSemantics[
@@ -18,6 +18,8 @@ class Semantics(mainExpr: Syntax.ProcessExpression)
   import Semantics.*
 
   override def stateIds(ex: Syntax.ProcessExpression) = ex
+
+  override def stateLabel(ex: Syntax.ProcessExpression) = ex.toString()
 
   override def globalEnvironment(ccsDef: Syntax.ProcessExpression)
       : (Env, Iterable[Syntax.ProcessExpression]) =
