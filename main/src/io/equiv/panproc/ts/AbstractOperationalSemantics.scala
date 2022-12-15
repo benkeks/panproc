@@ -14,14 +14,13 @@ trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
 
   val transitions = collection.mutable.Map[S, List[(A, S)]]()
   private val todo = collection.mutable.Buffer[E]()
+  val (procEnv, initialProcs) = globalEnvironment(mainExpr)
 
   def asTransitionSystem() =
     val (steps, nodes) = semantics()
     TransitionSystem(steps, nodes)
 
   def semantics(): (LabeledRelation[S, A], Map[S, L]) =
-    val (procEnv, initialProcs) = globalEnvironment(mainExpr)
-
     initialProcs.foreach(scheduleConversion)
 
     while todo.nonEmpty do

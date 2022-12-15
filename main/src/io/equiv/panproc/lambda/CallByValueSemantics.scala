@@ -1,6 +1,6 @@
 package io.equiv.panproc.lambda
 
-import io.equiv.panproc.ts.AbstractOperationalSemantics
+import io.equiv.panproc.ts.{AbstractOperationalSemantics, DerivedBigSteps}
 import io.equiv.panproc.lambda.Syntax.*
 
 object CallByValueSemantics:
@@ -43,7 +43,14 @@ class CallByValueSemantics(expr: Syntax.Expression)
       Syntax.Expression,
       CallByValueSemantics.EdgeLabel,
       CallByValueSemantics.NodeLabel
-    ](expr):
+    ](expr)
+    with DerivedBigSteps[
+      Syntax.Expression,
+      CallByValueSemantics.Environment,
+      Syntax.Expression,
+      CallByValueSemantics.EdgeLabel,
+      CallByValueSemantics.NodeLabel
+    ]:
 
   import CallByValueSemantics.*
 
