@@ -14,7 +14,7 @@ class Semantics(mainExpr: Expression)
   import CallByValueSemantics.*
 
   override def localSemantics(env: Environment)(e: Expression)
-      : List[(EdgeLabel, Expression)] =
+      : Iterable[(EdgeLabel, Expression)] =
     e match
       case Syntax.Prefix(l, proc) =>
         List((Action(l), proc))
@@ -59,4 +59,12 @@ class Semantics(mainExpr: Expression)
           if !aNames.contains(a)
         yield (a, Syntax.Restrict(names, p))
       case other =>
-        super.localSemantics(env)(other)
+        for
+          valueExpr <- eval(super.localSemantics(env))(other)
+          (a, p) <-
+            if valueExpr.isInstanceOf[Syntax.ProcessExpression] then
+              localSemantics(env)(valueExpr)
+            else
+              super.localSemantics(env)(valueExpr)
+        yield
+          a -> p

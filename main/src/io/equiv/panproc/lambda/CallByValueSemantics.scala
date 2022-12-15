@@ -33,6 +33,8 @@ object CallByValueSemantics:
     override def toString() = "e"
   end Environment
 
+  val emptyEnv = Environment(Map(), null)
+
   case class Bind(env: Environment, term: Syntax.Expression) extends Syntax.Intermediate:
     override def pretty = s"{${term.pretty}}"
 
@@ -47,7 +49,6 @@ class CallByValueSemantics(expr: Syntax.Expression)
     with DerivedBigSteps[
       Syntax.Expression,
       CallByValueSemantics.Environment,
-      Syntax.Expression,
       CallByValueSemantics.EdgeLabel,
       CallByValueSemantics.NodeLabel
     ]:
@@ -60,11 +61,12 @@ class CallByValueSemantics(expr: Syntax.Expression)
 
   override def globalEnvironment(expr: Syntax.Expression)
       : (Environment, Iterable[Syntax.Expression]) =
-    (Environment(Map(), null), List(expr))
+    (emptyEnv, List(expr))
 
-  def isValue(e: Syntax.Expression) =
+  override def isValue(e: Syntax.Expression): Boolean =
     e match
       case Bind(_, Lambda(_, _)) => true // closures count as values
+      case LetRec(_, in)         => isValue(in) // computed letrecs count as values
       case l: Literal            => true
       case _                     => false
 
@@ -77,7 +79,7 @@ class CallByValueSemantics(expr: Syntax.Expression)
     }
 
   override def localSemantics(env: Environment)(e: Syntax.Expression)
-      : List[(EdgeLabel, Syntax.Expression)] =
+      : Iterable[(EdgeLabel, Syntax.Expression)] =
     e match
       case el @ Lambda(variables, term) =>
         // bake lambdas into closures
@@ -99,7 +101,6 @@ class CallByValueSemantics(expr: Syntax.Expression)
           (l, e) <- localSemantics(env)(function)
         yield (l -> Application(e, argument))
       case LetRec(definitions, in) =>
-        //List(() -> Bind(mkRec(env, definitions), in))
         for
           (l, e) <- localSemantics(mkRec(env, definitions))(in)
         yield (l, LetRec(definitions, e))
