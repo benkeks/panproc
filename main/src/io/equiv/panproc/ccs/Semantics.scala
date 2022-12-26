@@ -5,7 +5,8 @@ import io.equiv.panproc.lambda.CallByValueSemantics
 import io.equiv.panproc.lambda.Syntax.Expression
 
 object Semantics:
-  case class Action(action: Syntax.Label) extends CallByValueSemantics.EdgeLabel
+  case class Action(action: Syntax.Label) extends CallByValueSemantics.EdgeLabel:
+    override def toString(): String = action.toString()
 
 class Semantics(mainExpr: Expression)
     extends CallByValueSemantics(mainExpr):
@@ -13,8 +14,7 @@ class Semantics(mainExpr: Expression)
   import Semantics.*
   import CallByValueSemantics.*
 
-  override def localSemantics(env: Environment)(e: Expression)
-      : Iterable[(EdgeLabel, Expression)] =
+  override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
     e match
       case Syntax.Prefix(l, proc) =>
         List((Action(l), proc))
@@ -24,43 +24,42 @@ class Semantics(mainExpr: Expression)
         val initialSteps = procs.map(localSemantics(env)(_))
         val initialStepsGrouped =
           initialSteps.map(_.groupBy { _._1 }).zipWithIndex
-        val newSyncSteps = for
-          (initsP, iP) <- initialStepsGrouped
-          (initsQ, iQ) <- initialStepsGrouped
-          if iP != iQ
-          (Action(Syntax.Send(a)), pContAs) <- initsP
-          qContAr <- initsQ.get(Action(Syntax.Receive(a))).toList
-          (_, pAs) <- pContAs
-          (_, qAr) <- qContAr
-          newProcs = procs.zipWithIndex.map { case (p, i) =>
-            if i == iP then
-              pAs
-            else if i == iQ then
-              qAr
-            else
-              p
-          }
-        yield
-          (CallByValueSemantics.InternalStep(), Syntax.Parallel(newProcs))
-        val newInterleavedSteps = for
-         (initsP, iP) <- initialSteps.zipWithIndex
-         (a, p) <- initsP
-         newProcs = procs.updated(iP, p)
-        yield
-          (a, Syntax.Parallel(newProcs))
+        val newSyncSteps =
+          for
+            (initsP, iP) <- initialStepsGrouped
+            (initsQ, iQ) <- initialStepsGrouped
+            if iP != iQ
+            (Action(Syntax.Send(a)), pContAs) <- initsP
+            qContAr <- initsQ.get(Action(Syntax.Receive(a))).toList
+            (_, pAs) <- pContAs
+            (_, qAr) <- qContAr
+            newProcs = procs.zipWithIndex.map { case (p, i) =>
+              if i == iP then
+                pAs
+              else if i == iQ then
+                qAr
+              else
+                p
+            }
+          yield CallByValueSemantics.InternalStep() -> Syntax.Parallel(newProcs)
+        val newInterleavedSteps =
+          for
+            (initsP, iP) <- initialSteps.zipWithIndex
+            (a, p) <- initsP
+            newProcs = procs.updated(iP, p)
+          yield a -> Syntax.Parallel(newProcs)
         newSyncSteps ++ newInterleavedSteps
       case Syntax.Restrict(names, proc) =>
         for
           (a, p) <- localSemantics(env)(proc)
-          if a match {
+          if a match
             case Action(Syntax.Send(name)) =>
               !names.contains(name)
             case Action(Syntax.Receive(name)) =>
               !names.contains(name)
             case _ =>
               true
-          }
-        yield (a, Syntax.Restrict(names, p))
+        yield a -> Syntax.Restrict(names, p)
       case other =>
         for
           valueExpr <- eval(super.localSemantics(env))(other)
@@ -69,5 +68,4 @@ class Semantics(mainExpr: Expression)
               localSemantics(env)(valueExpr)
             else
               super.localSemantics(env)(valueExpr)
-        yield
-          a -> p
+        yield a -> p

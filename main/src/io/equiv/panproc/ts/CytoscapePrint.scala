@@ -1,28 +1,35 @@
 package io.equiv.panproc.ts
 
 import jupyter.{Displayer, Displayers}
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 object CytoscapePrint:
 
   var cytoscapeUrl = "../node_modules/cytoscape/dist/cytoscape.esm.min.js"
 
   def setup(): Unit =
-    Displayers.register(classOf[TransitionSystem[_,_,_]], new Displayer[TransitionSystem[_,_,_]] {
-      override def display(ts: TransitionSystem[_,_,_]): java.util.Map[String, String] =
-        val nodeStrings = for {
-          (id, label) <- ts.nodeLabeling.toIterable
-        } yield s"{ data: { id: '$id', name: '$label'} }"
-        val edgeStrings = for {
-          (src, label, target) <- ts.step.tupleSet
-        } yield s"{ data: { source: '$src', target: '$target', label: '$label'} }"
-        Map("text/html" ->
-          buildCytoscape(nodeStrings.mkString("[", ",", "]"), edgeStrings.mkString("[", ",", "]"))
-        ).asJava
-    })
+    Displayers.register(
+      classOf[TransitionSystem[?, ?, ?]],
+      new Displayer[TransitionSystem[?, ?, ?]]:
+        override def display(ts: TransitionSystem[?, ?, ?]): java.util.Map[String, String] =
+          val nodeStrings =
+            for
+              (id, label) <- ts.nodeLabeling.toIterable
+            yield s"{ data: { id: '$id', name: '$label'} }"
+          val edgeStrings =
+            for
+              (src, label, target) <- ts.step.tupleSet
+            yield s"{ data: { source: '$src', target: '$target', label: '$label'} }"
+          Map("text/html" ->
+            buildCytoscape(
+              nodeStrings.mkString("[", ",", "]"),
+              edgeStrings.mkString("[", ",", "]"),
+              height = 100 + 150 * Math.pow(ts.nodeLabeling.size, .5).toInt
+            )).asJava
+    )
 
-  def buildCytoscape(nodesString: String, edgesString: String) =
-    s"""<div id="cy" style="width: 100%; height: 300px;"></div>
+  def buildCytoscape(nodesString: String, edgesString: String, height: Int = 300) =
+    s"""<div id="cy" style="width: 100%; height: ${height}px;"></div>
        |
        |<script type="module">
        |import cytoscape from "$cytoscapeUrl";

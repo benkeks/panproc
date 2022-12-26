@@ -12,11 +12,11 @@ object Syntax:
   abstract class Label(name: Name) extends Literal():
     override def pretty = name.name
 
-  case class Send(name: Name) extends Label(name)
+  case class Send(name: Name) extends Label(name):
+    override def toString(): String = s"$name!⟨⟩"
 
-  case class Receive(name: Name) extends Label(name)
-
-  case class Internal() extends Label(Name("tau"))
+  case class Receive(name: Name) extends Label(name):
+    override def toString(): String = s"$name()"
 
   abstract sealed class ProcessExpression() extends Literal():
 
@@ -34,7 +34,7 @@ object Syntax:
       else
         Prefix(Receive(Name(name)), this)
 
-    infix def \ (restrictedNames: Iterable[String]) =
+    infix def \(restrictedNames: Iterable[String]) =
       Restrict(restrictedNames.toList.map(Name(_)), this)
 
   case class Prefix(val l: Label, val proc: Expression) extends ProcessExpression():

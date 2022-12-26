@@ -5,7 +5,8 @@ import io.equiv.panproc.lambda.Syntax.*
 
 object CallByValueSemantics:
   abstract class EdgeLabel
-  case class InternalStep() extends EdgeLabel
+  case class InternalStep() extends EdgeLabel:
+    override def toString(): String = "τ"
 
   type NodeLabel = String
 
@@ -106,7 +107,7 @@ class CallByValueSemantics(expr: Syntax.Expression)
         yield (l, LetRec(definitions, e))
       case Bind(env, term) if isValue(term) =>
         List(InternalStep() -> term)
-      case  Bind(env, Lambda(_, _)) =>
+      case Bind(env, Lambda(_, _)) =>
         List()
       case Bind(env, term) =>
         for
