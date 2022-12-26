@@ -21,37 +21,34 @@ class Semantics(mainExpr: Expression)
       case Syntax.Choice(procs) =>
         procs.flatMap(localSemantics(env)(_))
       case Syntax.Parallel(procs) =>
-        List()
-      // val initialSteps = procs.map(localSemantics(procEnv)(_))
-      // val initialStepsGrouped =
-      //   initialSteps.map(_.groupBy { case (a, _) => (toInput(a), isOutput(a)) }).zipWithIndex
-      // val newSyncSteps = for {
-      //   (initsA, iA) <- initialStepsGrouped
-      //   (initsB, iB) <- initialStepsGrouped.filterNot(_._2 == iA)
-      //   bOutputs = initsB.filterKeys(_._2)
-      //   ((actionA, _), succA) <- initsA.filterKeys(k => !k._2).toList
-      //   pA <- succA
-      //   pB <- bOutputs.getOrElse((actionA, true), Nil)
-      // } yield {
-      //   val newProcs = procs.zipWithIndex.map { case (p, i) =>
-      //     if (i == iA) {
-      //       pA._2
-      //     } else if (i == iB) {
-      //       pB._2
-      //     } else {
-      //       p
-      //     }
-      //   }
-      //   (silentAction, Syntax.Parallel(newProcs))
-      // }
-      // val newInterleavedSteps: List[(A, Syntax.ProcessExpression)] = for {
-      //   (initsA, iA) <- initialSteps.zipWithIndex
-      //   (a, p) <- initsA
-      // } yield {
-      //   val newProcs = procs.updated(iA, p)
-      //   (a, Syntax.Parallel(newProcs))
-      // }
-      // newSyncSteps ++ newInterleavedSteps
+        val initialSteps = procs.map(localSemantics(env)(_))
+        val initialStepsGrouped =
+          initialSteps.map(_.groupBy { _._1 }).zipWithIndex
+        val newSyncSteps = for
+          (initsP, iP) <- initialStepsGrouped
+          (initsQ, iQ) <- initialStepsGrouped
+          if iP != iQ
+          (Action(Syntax.Send(a)), pContAs) <- initsP
+          qContAr <- initsQ.get(Action(Syntax.Receive(a))).toList
+          (_, pAs) <- pContAs
+          (_, qAr) <- qContAr
+          newProcs = procs.zipWithIndex.map { case (p, i) =>
+            if i == iP then
+              pAs
+            else if i == iQ then
+              qAr
+            else
+              p
+          }
+        yield
+          (CallByValueSemantics.InternalStep(), Syntax.Parallel(newProcs))
+        val newInterleavedSteps = for
+         (initsP, iP) <- initialSteps.zipWithIndex
+         (a, p) <- initsP
+         newProcs = procs.updated(iP, p)
+        yield
+          (a, Syntax.Parallel(newProcs))
+        newSyncSteps ++ newInterleavedSteps
       case Syntax.Restrict(names, proc) =>
         val aNames = names.map(_.name)
         for

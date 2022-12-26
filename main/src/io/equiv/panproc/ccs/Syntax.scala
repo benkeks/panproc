@@ -29,7 +29,10 @@ object Syntax:
       Parallel(List(this, other))
 
     infix def *:(name: String) =
-      Prefix(Send(Name(name)), this)
+      if (name.endsWith("!")) then
+        Prefix(Send(Name(name.dropRight(1))), this)
+      else
+        Prefix(Receive(Name(name)), this)
 
   case class Prefix(val l: Label, val proc: Expression) extends ProcessExpression():
 
