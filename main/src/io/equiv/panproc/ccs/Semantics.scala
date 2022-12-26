@@ -50,10 +50,16 @@ class Semantics(mainExpr: Expression)
           (a, Syntax.Parallel(newProcs))
         newSyncSteps ++ newInterleavedSteps
       case Syntax.Restrict(names, proc) =>
-        val aNames = names.map(_.name)
         for
           (a, p) <- localSemantics(env)(proc)
-          if !aNames.contains(a)
+          if a match {
+            case Action(Syntax.Send(name)) =>
+              !names.contains(name)
+            case Action(Syntax.Receive(name)) =>
+              !names.contains(name)
+            case _ =>
+              true
+          }
         yield (a, Syntax.Restrict(names, p))
       case other =>
         for

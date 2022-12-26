@@ -34,6 +34,9 @@ object Syntax:
       else
         Prefix(Receive(Name(name)), this)
 
+    infix def \ (restrictedNames: Iterable[String]) =
+      Restrict(restrictedNames.toList.map(Name(_)), this)
+
   case class Prefix(val l: Label, val proc: Expression) extends ProcessExpression():
 
     override def pretty =
@@ -75,7 +78,7 @@ object Syntax:
 
     override def pretty =
       val ps = proc.pretty
-      (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" \\ {", ",", "}")
+      (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" ⧹ {", ",", "}")
 
     override def asContext(insertion: Expression): ProcessExpression =
       Restrict(names, insertion)
