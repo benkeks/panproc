@@ -29,6 +29,10 @@ object Syntax:
     override def pretty = s"letrec ${definitions.map(_.pretty).mkString("; ")} in ${in.pretty}"
 
   abstract class Literal extends Expression
+
+  case class Number(number: Int) extends Literal:
+    override def pretty: String = number.toString()
+
   abstract class Intermediate extends Expression
 
   object Notation:
@@ -36,6 +40,8 @@ object Syntax:
     def λ(variable: String)(term: Expression) = Lambda(Name(variable), term)
 
     def atom(name: String) = Variable(Name(name))
+
+    def num(number: Int) = Number(number)
 
     import scala.language.dynamics
     object let extends Dynamic:

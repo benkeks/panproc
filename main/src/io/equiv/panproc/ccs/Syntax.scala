@@ -60,7 +60,10 @@ object Syntax:
       Choice(procs :+ insertion)
 
   def NullProcess() = Choice(Nil)
-  def RecProc(name: String) = Choice(List(lambda.Syntax.Variable(lambda.Syntax.Name(name))))
+  def RecProc(name: String) =
+    Choice(List(lambda.Syntax.Variable(lambda.Syntax.Name(name))))
+  def RecProc(name: String, argument: Expression) =
+    Choice(List(lambda.Syntax.Application(lambda.Syntax.Variable(lambda.Syntax.Name(name)), argument)))
 
   case class Parallel(val procs: List[Expression]) extends ProcessExpression():
 
