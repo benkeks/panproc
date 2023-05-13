@@ -9,5 +9,6 @@
     "cytoscape": "3.19"
   },
   "scripts": {
+    "update-jar": "mill main.jar && cp out/main/jar.dest/out.jar notebooks/lib/panproc.jar"
   }
 }
