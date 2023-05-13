@@ -2,6 +2,7 @@ package io.equiv.panproc.ccs
 
 import io.equiv.panproc.lambda
 import io.equiv.panproc.lambda.Syntax.Expression
+import io.equiv.panproc.lambda.Syntax.Intermediate
 import io.equiv.panproc.lambda.Syntax.Literal
 
 object Syntax:
@@ -18,7 +19,7 @@ object Syntax:
   case class Receive(name: Name) extends Label(name):
     override def toString(): String = s"$name()"
 
-  abstract sealed class ProcessExpression() extends Literal():
+  abstract sealed class ProcessExpression() extends Intermediate():
 
     def asContext(insertion: Expression): ProcessExpression
 

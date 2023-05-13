@@ -3,6 +3,7 @@ package io.equiv.panproc.ccs
 import io.equiv.panproc.ts.AbstractOperationalSemantics
 import io.equiv.panproc.lambda.CallByValueSemantics
 import io.equiv.panproc.lambda.Syntax.Expression
+import io.equiv.panproc.ccs.Syntax.ProcessExpression
 
 object Semantics:
   case class Action(action: Syntax.Label) extends CallByValueSemantics.EdgeLabel:
@@ -16,6 +17,9 @@ class Semantics(mainExpr: Expression)
 
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
     e match
+      case Bind(env, Syntax.Prefix(l, proc)) =>
+        //TODO apply Bind
+        List((Action(l), Bind(env, proc)))
       case Syntax.Prefix(l, proc) =>
         List((Action(l), proc))
       case Syntax.Choice(procs) =>
@@ -62,10 +66,16 @@ class Semantics(mainExpr: Expression)
         yield a -> Syntax.Restrict(names, p)
       case other =>
         for
-          valueExpr <- eval(super.localSemantics(env))(other)
+          valueExpr <- eval(super.localSemantics(env), isProcessExpression)(other)
           (a, p) <-
             if valueExpr.isInstanceOf[Syntax.ProcessExpression] then
               localSemantics(env)(valueExpr)
             else
               super.localSemantics(env)(valueExpr)
         yield a -> p
+
+  def isProcessExpression(e: Expression): Boolean = e match
+    case b: Bind => isProcessExpression(b.unpacked())
+    case pe: ProcessExpression => true
+    case _ => false
+

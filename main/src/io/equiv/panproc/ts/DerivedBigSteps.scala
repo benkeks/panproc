@@ -5,13 +5,14 @@ trait DerivedBigSteps[E, Env, A, L]:
 
   def isValue(e: E): Boolean
 
-  def eval(sem: E => Iterable[(A, E)])(expr: E): Iterable[E] =
+  def eval(sem: E => Iterable[(A, E)], stopAt: E => Boolean)(expr: E): Iterable[E] =
     val proc0 = stateIds(expr)
-    if isValue(proc0) then
+    println(proc0)
+    if isValue(proc0) || stopAt(proc0) then
       List(proc0)
     else
       for
         (a, expr1) <- sem(expr)
-        r <- eval(sem)(stateIds(expr1))
+        r <- eval(sem, stopAt)(stateIds(expr1))
       yield
         r

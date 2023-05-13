@@ -39,6 +39,11 @@ object CallByValueSemantics:
   case class Bind(env: Environment, term: Syntax.Expression) extends Syntax.Intermediate:
     override def pretty = s"{${term.pretty}}"
 
+    def unpacked(): Syntax.Expression = term match
+      case b: Bind => b.unpacked()
+      case other => other
+
+
 class CallByValueSemantics(expr: Syntax.Expression)
     extends AbstractOperationalSemantics[
       Syntax.Expression,
