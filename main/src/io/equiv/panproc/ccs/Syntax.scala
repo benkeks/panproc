@@ -62,7 +62,10 @@ object Syntax:
 
   def NullProcess() = Choice(Nil)
   def RecProc(name: String) =
-    Choice(List(lambda.Syntax.Variable(lambda.Syntax.Name(name))))
+    Choice(List(
+      lambda.Syntax.Application(
+        lambda.Syntax.Variable(lambda.Syntax.Name(name)),
+        lambda.Syntax.Number(0))))
   def RecProc(name: String, argument: Expression) =
     Choice(List(lambda.Syntax.Application(lambda.Syntax.Variable(lambda.Syntax.Name(name)), argument)))
 

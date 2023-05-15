@@ -1,7 +1,7 @@
 package io.equiv.panproc.tool
 
 import io.equiv.panproc.ccs.Syntax
-import io.equiv.panproc.ccs.Syntax.NullProcess
+import io.equiv.panproc.ccs.Syntax.{ NullProcess, RecProc }
 import io.equiv.panproc.ccs.Semantics
 
 import io.equiv.panproc.lambda
@@ -16,9 +16,19 @@ import io.equiv.panproc.lambda.Syntax.Notation._
     atom("a")(atom("a"))
   )
 
-  //println(lambdaProg)
+  val ccsProg = let.rec(
+    P1 = "hello!" *: RecProc("P2") + "stop" *: NullProcess(),
+    P2 = "reload!" *: "hello" *: RecProc("P1"),
+    (RecProc("P1") | RecProc("P2")) \ Set("hello")
+  )
 
-  println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
+  val ccsIterProg = let.rec(
+    P1 = λ("x")("world" *: RecProc("P1")),
+    atom("P1")(num(0))
+  )
+  println(Semantics(ccsIterProg).semantics())
+
+  //println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
 
 
   // val proc = "w" *: ("x" *: "y" *: "z" *: Syntax.ProcessName(

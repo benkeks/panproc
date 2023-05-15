@@ -14,7 +14,10 @@ object CallByValueSemantics:
   class Environment(defs: => Map[String, Expression], parent: Environment):
 
     def push(newDefs: => List[(String, Expression)]): Environment =
-      Environment(newDefs.toMap, this)
+      Environment(flatten(newDefs.toMap), null)
+
+    def push(otherEnvironment: Environment): Environment =
+      Environment(otherEnvironment.flatten(defs), null)
 
     def get(x: String): Option[Expression] =
       val v = defs.get(x)
@@ -22,6 +25,12 @@ object CallByValueSemantics:
         v.orElse(parent.get(x))
       else
         v
+
+    def height(): Int =
+      if parent == null then
+        1
+      else
+        1 + parent.height()
 
     def flatten(collected: Map[String, Expression] = Map()): Map[String, Expression] =
       val relevantDefs = defs -- collected.keys
@@ -31,7 +40,16 @@ object CallByValueSemantics:
       else
         parent.flatten(newCollected)
 
-    override def toString() = "e"
+    override def hashCode(): Int = flatten().keySet.hashCode()
+
+    override def equals(other: Any): Boolean =
+      other match
+        case e: Environment =>
+          e.flatten().keySet == this.flatten().keySet
+        case _ =>
+          false
+
+    override def toString() = height() + ":" + defs.keys.mkString(",")
   end Environment
 
   val emptyEnv = Environment(Map(), null)
@@ -86,6 +104,7 @@ class CallByValueSemantics(expr: Syntax.Expression)
 
   override def localSemantics(env: Environment)(e: Syntax.Expression)
       : Iterable[(EdgeLabel, Syntax.Expression)] =
+    println("lambda rule for: " + e)
     e match
       case el @ Lambda(variables, term) =>
         // bake lambdas into closures
@@ -100,22 +119,24 @@ class CallByValueSemantics(expr: Syntax.Expression)
         )
       case Application(function, argument) if isValue(function) =>
         for
-          (l, e) <- localSemantics(env)(argument)
+          (l, e) <- this.localSemantics(env)(argument)
         yield l -> Application(function, e)
       case Application(function, argument) =>
         for
-          (l, e) <- localSemantics(env)(function)
+          (l, e) <- this.localSemantics(env)(function)
         yield (l -> Application(e, argument))
       case LetRec(definitions, in) =>
         for
-          (l, e) <- localSemantics(mkRec(env, definitions))(in)
+          (l, e) <- this.localSemantics(mkRec(env, definitions))(in)
         yield (l, LetRec(definitions, e))
-      case Bind(env, term) if isValue(term) =>
+      case Bind(env0, Bind(env1, term)) =>
+        List(InternalStep() -> Bind(env0.push(env1), term))
+      case Bind(env0, term) if isValue(term) =>
         List(InternalStep() -> term)
-      case Bind(env, Lambda(_, _)) =>
+      case Bind(env0, Lambda(_, _)) =>
         List()
-      case Bind(env, term) =>
+      case Bind(env0, term) =>
         for
-          (l, e) <- localSemantics(env)(term)
-        yield (l, Bind(env, e))
+          (l, e) <- this.localSemantics(env0)(term)
+        yield (l, Bind(env0, e))
       case _ => List()

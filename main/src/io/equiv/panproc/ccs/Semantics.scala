@@ -16,10 +16,11 @@ class Semantics(mainExpr: Expression)
   import CallByValueSemantics.*
 
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
+    println("rule for: " + e)
     e match
-      case Bind(env, Syntax.Prefix(l, proc)) =>
-        //TODO apply Bind
-        List((Action(l), Bind(env, proc)))
+      // case Bind(env, Syntax.Prefix(l, proc)) =>
+      //   //TODO apply Bind
+      //   List((Action(l), Bind(env, proc)))
       case Syntax.Prefix(l, proc) =>
         List((Action(l), proc))
       case Syntax.Choice(procs) =>
@@ -45,7 +46,7 @@ class Semantics(mainExpr: Expression)
               else
                 p
             }
-          yield CallByValueSemantics.InternalStep() -> Syntax.Parallel(newProcs)
+          yield InternalStep() -> Syntax.Parallel(newProcs)
         val newInterleavedSteps =
           for
             (initsP, iP) <- initialSteps.zipWithIndex
@@ -65,14 +66,25 @@ class Semantics(mainExpr: Expression)
               true
         yield a -> Syntax.Restrict(names, p)
       case other =>
-        for
-          valueExpr <- eval(super.localSemantics(env), isProcessExpression)(other)
-          (a, p) <-
-            if valueExpr.isInstanceOf[Syntax.ProcessExpression] then
-              localSemantics(env)(valueExpr)
-            else
-              super.localSemantics(env)(valueExpr)
-        yield a -> p
+        // for
+        //   (a, p) <- super.localSemantics(env)(other)
+        //   continuation <-
+        //     if a == CallByValueSemantics.InternalStep() then
+        //       localSemantics(env)(p)
+        //     else
+        //       List(a -> p)
+        // yield
+        //   continuation
+        // for
+        //   valueExpr <- eval(super.lambdaSemantics(env), isProcessExpression)(other)
+        //   (a, p) <-
+        //     if valueExpr.isInstanceOf[Syntax.ProcessExpression] then
+        //       localSemantics(env)(valueExpr)
+        //     else
+        //       super.lambdaSemantics(env)(valueExpr)
+        //yield a -> p
+        //super.localSemantics(env)(other)
+        evalDelay(super.localSemantics(env), InternalStep())(other)
 
   def isProcessExpression(e: Expression): Boolean = e match
     case b: Bind => isProcessExpression(b.unpacked())
