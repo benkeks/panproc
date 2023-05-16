@@ -25,7 +25,6 @@ trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
 
     while todo.nonEmpty do
       val proc0 = todo.remove(0)
-      println("process: " + proc0)
       val state0 = stateIds(proc0)
       if !transitions.isDefinedAt(state0) then
         transitions(state0) =

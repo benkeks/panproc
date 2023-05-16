@@ -53,7 +53,6 @@ class CallByValueBigStepSemantics(expr: Expression)
     case _ => false
 
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
-    println("lambda rule for: " + e + " in " + env)
     for
       (step, result) <- e match
         case Variable(variable) =>

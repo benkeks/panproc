@@ -5,11 +5,20 @@ import io.equiv.panproc.lambda.CallByValueBigStepSemantics
 import io.equiv.panproc.lambda.Syntax.Expression
 import io.equiv.panproc.lambda.Environment
 import io.equiv.panproc.ccs.Syntax.ProcessExpression
+import io.equiv.panproc.lambda.Syntax.Application
 
 object Semantics:
-  case class Action(action: Syntax.Label) extends CallByValueBigStepSemantics.EdgeLabel:
-    override def toString(): String = action.toString()
-  case class CommunicationStep() extends CallByValueBigStepSemantics.EdgeLabel:
+  abstract class ActionStep extends CallByValueBigStepSemantics.EdgeLabel
+
+  case class SendStep(name: Syntax.Name, payload: Option[Expression]) extends ActionStep:
+    override def toString(): String = payload match
+      case None        => s"$name!⟨⟩"
+      case Some(value) => s"$name!⟨${value.pretty}⟩"
+
+  case class ReceiveStep(name: Syntax.Name) extends ActionStep:
+    override def toString(): String = s"$name()"
+
+  case class CommunicationStep() extends ActionStep:
     override def toString(): String = "τ"
 
 class Semantics(mainExpr: Expression)
@@ -19,11 +28,17 @@ class Semantics(mainExpr: Expression)
   import CallByValueBigStepSemantics.*
 
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
-    println("CCS rule for: " + e + " in " + env)
     for
-      (step, result) <- e match
-        case Syntax.Prefix(l, proc) =>
-          List((Action(l), proc))
+      (step: EdgeLabel, result: Expression) <- e match
+        case Syntax.Send(Syntax.Label(name, argument), proc) =>
+          val arg =
+            for
+              a <- argument
+              (_, value) <- super.localSemantics(env)(a).headOption
+            yield value
+          List(SendStep(name, arg) -> proc)
+        case Syntax.Receive(Syntax.Label(name, _), proc) =>
+          List(ReceiveStep(name) -> proc)
         case Syntax.Choice(procs) =>
           procs.flatMap(localSemantics(env)(_))
         case Syntax.Parallel(procs) =>
@@ -35,15 +50,17 @@ class Semantics(mainExpr: Expression)
               (initsP, iP) <- initialStepsGrouped
               (initsQ, iQ) <- initialStepsGrouped
               if iP != iQ
-              (Action(Syntax.Send(a)), pContAs) <- initsP
-              qContAr <- initsQ.get(Action(Syntax.Receive(a))).toList
+              (SendStep(a, payload), pContAs) <- initsP
+              qContAr <- initsQ.get(ReceiveStep(a)).toList
               (_, pAs) <- pContAs
               (_, qAr) <- qContAr
               newProcs = procs.zipWithIndex.map { case (p, i) =>
                 if i == iP then
                   pAs
                 else if i == iQ then
-                  qAr
+                  payload match
+                    case None       => qAr
+                    case Some(data) => Application(qAr, data)
                 else
                   p
               }
@@ -59,9 +76,9 @@ class Semantics(mainExpr: Expression)
           for
             (a, p) <- localSemantics(env)(proc)
             if a match
-              case Action(Syntax.Send(name)) =>
+              case SendStep(name, _) =>
                 !names.contains(name)
-              case Action(Syntax.Receive(name)) =>
+              case ReceiveStep(name) =>
                 !names.contains(name)
               case _ =>
                 true
@@ -72,7 +89,7 @@ class Semantics(mainExpr: Expression)
         if isValue(result) then
           List(step -> result)
         else
-          super.localSemantics(env)(result).filter(_._1.isInstanceOf[CallByValueBigStepSemantics.BigStep])
-    yield
-      (step, finalizedResult)
-
+          super.localSemantics(env)(result).filter(
+            _._1.isInstanceOf[CallByValueBigStepSemantics.BigStep]
+          )
+    yield (step, finalizedResult)
