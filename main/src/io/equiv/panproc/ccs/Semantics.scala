@@ -3,6 +3,7 @@ package io.equiv.panproc.ccs
 import io.equiv.panproc.ts.AbstractOperationalSemantics
 import io.equiv.panproc.lambda.CallByValueBigStepSemantics
 import io.equiv.panproc.lambda.Syntax.Expression
+import io.equiv.panproc.lambda.Environment
 import io.equiv.panproc.ccs.Syntax.ProcessExpression
 
 object Semantics:

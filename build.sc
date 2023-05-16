@@ -3,6 +3,8 @@ import mill._, mill.scalalib._
 object main extends ScalaModule {
   def scalaVersion = "3.1.3"
 
+  def scalacOptions = Seq("-deprecation")
+
   def ivyDeps = Agg(
     ivy"sh.almond:scala-kernel-api-cross-3.1.3_2.13.7:0.13.2"
   )
