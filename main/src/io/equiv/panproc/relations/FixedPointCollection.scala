@@ -1,17 +1,13 @@
 package io.equiv.panproc.relations
 
-class FixedPointCollection[A](step: (Iterable[A]) => Iterable[A]) {
-  def apply(initial: Iterable[A]): Iterable[A] = {
+class FixedPointCollection[A](step: (Iterable[A]) => Iterable[A]):
+  def apply(initial: Iterable[A]): Iterable[A] =
     val newValues = step(initial)
-    if (newValues.isEmpty) {
+    if newValues.isEmpty then
       initial
-    } else {
+    else
       initial ++ apply(newValues)
-    }
-  }
-}
 
-object FixedPointCollection {
+object FixedPointCollection:
   def apply[A](step: (Iterable[A]) => Iterable[A]): FixedPointCollection[A] =
     new FixedPointCollection(step)
-}

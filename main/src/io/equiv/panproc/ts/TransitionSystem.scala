@@ -39,6 +39,7 @@ case class TransitionSystem[S, A, L](
       sp <- pre(s).toList
     yield sp)
       .groupBy(_._1)
+      .view
       .mapValues(_.flatMap(_._2))
       .toMap
 
@@ -49,7 +50,7 @@ case class TransitionSystem[S, A, L](
   val nodes = nodeLabeling.keySet
 
   val nodesByLabel =
-    nodeLabeling.groupBy(_._2).mapValues(_.keySet)
+    nodeLabeling.groupBy(_._2).view.mapValues(_.keySet).toMap
 
   val actions = step.labels
 
@@ -58,4 +59,6 @@ case class TransitionSystem[S, A, L](
   def toMermaid(prettyPrint: S => String = _.toString()): String =
     def slugify(str: String) = str.replaceAll("[^a-zA-Z\\d]", "")
     "flowchart TD\n    " +
-    step.tupleSet.map { case (src, a, tar) => s"${slugify(src.toString())}[\"${prettyPrint(src)}\"] -- $a --> ${slugify(tar.toString())}[\"${prettyPrint(tar)}\"]"}.mkString("\n    ")
+      step.tupleSet.map { case (src, a, tar) =>
+        s"${slugify(src.toString())}[\"${prettyPrint(src)}\"] -- $a --> ${slugify(tar.toString())}[\"${prettyPrint(tar)}\"]"
+      }.mkString("\n    ")

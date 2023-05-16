@@ -14,7 +14,7 @@ object CytoscapePrint:
         override def display(ts: TransitionSystem[?, ?, ?]): java.util.Map[String, String] =
           val nodeStrings =
             for
-              (id, label) <- ts.nodeLabeling.toIterable
+              (id, label) <- ts.nodeLabeling
             yield s"{ data: { id: '$id', name: '$label'} }"
           val edgeStrings =
             for
