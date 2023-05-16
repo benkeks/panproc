@@ -17,8 +17,8 @@ import io.equiv.panproc.lambda.Syntax.Notation._
   )
 
   val ccsProg = let.rec(
-    P1 = "hello!" *: RecProc("P2") + "stop" *: NullProcess(),
-    P2 = "reload!" *: "hello" *: RecProc("P1"),
+    P1 =  λ("x")("hello!" *: RecProc("P2") + "stop" *: NullProcess()),
+    P2 =  λ("x")("reload!" *: "hello" *: RecProc("P1")),
     (RecProc("P1") | RecProc("P2")) \ Set("hello")
   )
 
@@ -26,7 +26,8 @@ import io.equiv.panproc.lambda.Syntax.Notation._
     P1 = λ("x")("world" *: RecProc("P1")),
     atom("P1")(num(0))
   )
-  println(Semantics(ccsIterProg).semantics())
+  //println(lambda.CallByValueBigStepSemantics(ccsIterProg).asTransitionSystem())
+  println(Semantics(ccsProg).semantics())
 
   //println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
 
