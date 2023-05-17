@@ -63,9 +63,9 @@ class CallByValueBigStepSemantics(expr: Expression)
           List(BigStep() -> Bind(env, el))
         case Application(function, argument) =>
           for
-            (BigStep(), Bind(funEnv, Lambda(funVar, funTerm))) <- localSemantics(env)(function)
+            (BigStep(), Bind(funEnv, Lambda(Name(funVar), funTerm))) <- localSemantics(env)(function)
             (BigStep(), argValue) <- localSemantics(env)(argument)
-            callEnv = funEnv.push(List(funVar.name -> argValue))
+            callEnv = funEnv.push(List(funVar -> argValue))
             callStep <- localSemantics(callEnv)(funTerm)
           yield callStep
         case LetRec(definitions, in) =>

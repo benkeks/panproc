@@ -13,7 +13,7 @@ object Syntax:
     override def toString() = name
     def pretty: String = name
 
-  case class Lambda(variable: Name, term: Expression) extends Expression:
+  case class Lambda(variable: Pattern, term: Expression) extends Expression:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
 
   case class Variable(variable: Name) extends Expression:
@@ -33,7 +33,10 @@ object Syntax:
   case class Number(number: Int) extends Literal:
     override def pretty: String = number.toString()
 
-  abstract class Intermediate extends Expression
+  case class Unit() extends Literal:
+    override def pretty: String = "()"
+
+  trait Intermediate extends Expression
 
   object Notation:
 
