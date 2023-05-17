@@ -1,7 +1,7 @@
 package io.equiv.panproc.ts
 
 import jupyter.{Displayer, Displayers}
-import scala.collection.JavaConverters.*
+import scala.jdk.CollectionConverters.MapHasAsJava
 
 object CytoscapePrint:
 

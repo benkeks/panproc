@@ -50,7 +50,7 @@ class Semantics(mainExpr: Expression)
               (initsP, iP) <- initialStepsGrouped
               (initsQ, iQ) <- initialStepsGrouped
               if iP != iQ
-              (SendStep(a, payload), pContAs) <- initsP
+              case (SendStep(a, payload), pContAs) <- initsP
               qContAr <- initsQ.get(ReceiveStep(a)).toList
               (_, pAs) <- pContAs
               (_, qAr) <- qContAr

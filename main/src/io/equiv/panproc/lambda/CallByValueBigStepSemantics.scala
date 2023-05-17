@@ -43,7 +43,7 @@ class CallByValueBigStepSemantics(expr: Expression)
     lazy val rr = mkRec(env, defs)
     env.push {
       for
-        Definition(Name(variable), value) <- defs
+        case Definition(Name(variable), value) <- defs
       yield (variable, Bind(rr, value))
     }
 
@@ -63,8 +63,8 @@ class CallByValueBigStepSemantics(expr: Expression)
           List(BigStep() -> Bind(env, el))
         case Application(function, argument) =>
           for
-            (BigStep(), Bind(funEnv, Lambda(Name(funVar), funTerm))) <- localSemantics(env)(function)
-            (BigStep(), argValue) <- localSemantics(env)(argument)
+            case (BigStep(), Bind(funEnv, Lambda(Name(funVar), funTerm))) <- localSemantics(env)(function)
+            case (BigStep(), argValue) <- localSemantics(env)(argument)
             callEnv = funEnv.push(List(funVar -> argValue))
             callStep <- localSemantics(callEnv)(funTerm)
           yield callStep

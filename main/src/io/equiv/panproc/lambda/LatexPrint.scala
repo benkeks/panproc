@@ -1,7 +1,7 @@
 package io.equiv.panproc.lambda
 
 import jupyter.{Displayer, Displayers}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.MapHasAsJava
 
 object LatexPrint:
 
