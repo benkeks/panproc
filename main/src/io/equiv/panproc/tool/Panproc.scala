@@ -5,14 +5,14 @@ import io.equiv.panproc.ccs.Syntax.Notation._
 import io.equiv.panproc.ccs.Semantics
 
 import io.equiv.panproc.lambda
-import io.equiv.panproc.lambda.Syntax.Notation._
+import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
 
 @main def panproc() =
 
   val lambdaProg = let.rec(
-    a = λ("x")(atom("b")(atom("x"))),
-    b = λ("x")(atom("x")),
-    atom("a")(atom("a"))
+    a = λ("x")("b"("x")),
+    b = λ("x")("x"),
+    "a"("a")
   )
 
   val ccsProg = let.rec(

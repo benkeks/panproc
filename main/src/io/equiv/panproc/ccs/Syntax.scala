@@ -83,8 +83,6 @@ object Syntax:
         Send(Label(Name(channelName), argument), continuation)
 
     def receive(channelName: String) = ReceiveBuilder(channelName, None)
-    def receive(channelName: String, variableName: String) =
-      ReceiveBuilder(channelName, Some(lambda.Syntax.Variable(variableName)))
     def receive(channelName: String, matcher: lambda.Syntax.Pattern) =
       ReceiveBuilder(channelName, Some(matcher))
     final class ReceiveBuilder(channelName: String, matcher: Option[lambda.Syntax.Pattern])
@@ -99,4 +97,4 @@ object Syntax:
         processName: String,
         argument: Expression = lambda.Syntax.Unit()
     ): ProcessExpression =
-      Choice(List(lambda.Syntax.Application(lambda.Syntax.Notation.atom(processName), argument)))
+      Choice(List(lambda.Syntax.Application(lambda.Syntax.Variable(processName), argument)))

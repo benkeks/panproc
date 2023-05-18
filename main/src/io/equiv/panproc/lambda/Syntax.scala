@@ -13,6 +13,9 @@ object Syntax:
     override def toString() = name
     def pretty: String = name
 
+  case class Constructor(left: Pattern, right: Pattern) extends Pattern:
+    def pretty: String = s"(${left.pretty} ${right.pretty})"
+
   case class Lambda(variable: Pattern, term: Expression) extends Expression:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
 
@@ -25,7 +28,7 @@ object Syntax:
   case class LetRec(definitions: List[Definition], in: Expression) extends Expression:
     override def pretty = s"letrec ${definitions.map(_.pretty).mkString("; ")} in ${in.pretty}"
 
-  abstract class Literal extends Expression
+  abstract class Literal extends Expression, Pattern
 
   case class Number(number: Int) extends Literal:
     override def pretty: String = number.toString()
@@ -37,9 +40,10 @@ object Syntax:
 
   object Notation:
 
-    def λ(variable: String)(term: Expression) = Lambda(Variable(variable), term)
+    given stringToVar: Conversion[String, Variable] with
+      def apply(name: String): Variable = Variable(name)
 
-    def atom(name: String) = Variable(name)
+    def λ(variable: Pattern)(term: Expression) = Lambda(variable, term)
 
     def num(number: Int) = Number(number)
 
