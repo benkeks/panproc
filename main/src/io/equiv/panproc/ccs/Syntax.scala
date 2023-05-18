@@ -84,7 +84,7 @@ object Syntax:
 
     def receive(channelName: String) = ReceiveBuilder(channelName, None)
     def receive(channelName: String, variableName: String) =
-      ReceiveBuilder(channelName, Some(lambda.Syntax.Name(variableName)))
+      ReceiveBuilder(channelName, Some(lambda.Syntax.Variable(variableName)))
     def receive(channelName: String, matcher: lambda.Syntax.Pattern) =
       ReceiveBuilder(channelName, Some(matcher))
     final class ReceiveBuilder(channelName: String, matcher: Option[lambda.Syntax.Pattern])

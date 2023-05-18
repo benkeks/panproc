@@ -6,18 +6,15 @@ object Syntax:
     def apply(other: Expression) = Application(this, other)
     def pretty: String
 
-  abstract class Pattern:
+  trait Pattern:
     def pretty: String
 
-  case class Name(name: String) extends Pattern:
+  case class Variable(name: String) extends Expression, Pattern:
     override def toString() = name
     def pretty: String = name
 
   case class Lambda(variable: Pattern, term: Expression) extends Expression:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
-
-  case class Variable(variable: Name) extends Expression:
-    override def pretty = variable.pretty
 
   case class Application(function: Expression, argument: Expression) extends Expression:
     override def pretty = s"${function.pretty} ${argument.pretty}"
@@ -40,9 +37,9 @@ object Syntax:
 
   object Notation:
 
-    def λ(variable: String)(term: Expression) = Lambda(Name(variable), term)
+    def λ(variable: String)(term: Expression) = Lambda(Variable(variable), term)
 
-    def atom(name: String) = Variable(Name(name))
+    def atom(name: String) = Variable(name)
 
     def num(number: Int) = Number(number)
 
@@ -50,7 +47,7 @@ object Syntax:
     object let extends Dynamic:
       def applyDynamicNamed(kind: String)(args: (String, Expression)*) =
         if kind == "rec" then
-          val defs = for (name, value) <- args if name != "" yield Definition(Name(name), value)
+          val defs = for (name, value) <- args if name != "" yield Definition(Variable(name), value)
           val in = args.find(_._1 == "")
           LetRec(defs.toList, in.get._2)
         else
