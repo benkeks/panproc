@@ -21,6 +21,24 @@ object Syntax:
 
   case class Application(function: Expression, argument: Expression) extends Expression:
     override def pretty = s"${function.pretty} ${argument.pretty}"
+    def toPattern(): Pattern =
+      Constructor(
+        function match
+          case p: Pattern =>
+            p
+          case a: Application =>
+            a.toPattern()
+          case _ =>
+            throw Exception(s"$function cannot be a pattern.")
+        ,
+        argument match
+          case p: Pattern =>
+            p
+          case a: Application =>
+            a.toPattern()
+          case _ =>
+            throw Exception(s"$argument cannot be a pattern."),
+      )
 
   case class Definition(pattern: Pattern, value: Expression):
     def pretty = s"${pattern.pretty} = ${value.pretty}"
@@ -42,6 +60,12 @@ object Syntax:
 
     given stringToVar: Conversion[String, Variable] with
       def apply(name: String): Variable = Variable(name)
+
+    given intToNum: Conversion[Int, Number] with
+      def apply(number: Int): Number = Number(number)
+
+    given applicationToPattern: Conversion[Application, Pattern] with
+      def apply(expression: Application): Pattern = expression.toPattern()
 
     def λ(variable: Pattern)(term: Expression) = Lambda(variable, term)
 

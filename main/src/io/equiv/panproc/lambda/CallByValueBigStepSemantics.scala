@@ -4,7 +4,6 @@ import io.equiv.panproc.ts.{AbstractOperationalSemantics}
 import io.equiv.panproc.lambda.Syntax.*
 import io.equiv.panproc.lambda.Environment
 
-
 object CallByValueBigStepSemantics:
   abstract class EdgeLabel
   case class BigStep() extends EdgeLabel:
@@ -47,10 +46,35 @@ class CallByValueBigStepSemantics(expr: Expression)
       yield (variable, Bind(rr, value))
     }
 
+  def matchPattern(pattern: Pattern, expression: Expression): List[(String, Expression)] =
+    pattern match
+      case Variable(name) =>
+        List(name -> (
+          expression match
+            case Variable(rightName) if name != rightName =>
+              throw Exception(s"Constructors $pattern and $expression do not match.")
+            case _ =>
+              expression
+        ))
+      case valuePattern: Literal =>
+        if valuePattern == expression then
+          List()
+        else
+          throw Exception(s"$pattern and $expression cannot match.")
+      case Constructor(left, right) =>
+        expression match
+          case Application(function, argument) =>
+            matchPattern(left, function) ++
+              matchPattern(right, argument)
+          case Bind(env, term) =>
+            matchPattern(pattern, term)
+          case _ =>
+            throw Exception(s"$pattern and $expression cannot match.")
+
   def isValue(e: Expression) = e match
     case _: Literal => true
-    case _: Bind => true
-    case _ => false
+    case _: Bind    => true
+    case _          => false
 
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
     for
@@ -63,9 +87,12 @@ class CallByValueBigStepSemantics(expr: Expression)
           List(BigStep() -> Bind(env, el))
         case Application(function, argument) =>
           for
-            case (BigStep(), Bind(funEnv, Lambda(Variable(funVar), funTerm))) <- localSemantics(env)(function)
+            case (BigStep(), Bind(funEnv, Lambda(pattern, funTerm))) <- localSemantics(env)(
+              function
+            )
             case (BigStep(), argValue) <- localSemantics(env)(argument)
-            callEnv = funEnv.push(List(funVar -> argValue))
+            variableMatching = matchPattern(pattern, argValue)
+            callEnv = funEnv.push(variableMatching)
             callStep <- localSemantics(callEnv)(funTerm)
           yield callStep
         case LetRec(definitions, in) =>
@@ -80,4 +107,5 @@ class CallByValueBigStepSemantics(expr: Expression)
         (step -> result)
       else
         // if we dont reach a value, we freeze the execution, including the bindings.
-        (step -> Bind(env, result))
+        (step -> Bind(env, result)
+      )

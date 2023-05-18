@@ -15,6 +15,12 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
     "a"("a")
   )
 
+  val constructorTest = let.rec(
+    myObject = "Cons"(1)(2),
+    myProjection = λ("Cons"("x")("y"))("y"),
+    "myProjection"("myObject")
+  )
+
   val ccsProg = let.rec(
     P1 =  λ("x")(send("hello") * subProcess("P2") + receive("stop") * nullProcess),
     P2 =  λ("x")(send("reload") * (receive("hello") * subProcess("P1"))),
@@ -26,7 +32,7 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
     subProcess("P1")
   )
   //println(lambda.CallByValueBigStepSemantics(ccsIterProg).asTransitionSystem())
-  println(Semantics(ccsIterProg).semantics())
+  println(Semantics(constructorTest).semantics())
 
   //println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
 
