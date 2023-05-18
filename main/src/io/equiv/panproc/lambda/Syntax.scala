@@ -16,7 +16,7 @@ object Syntax:
   case class Constructor(left: Pattern, right: Pattern) extends Pattern:
     def pretty: String = s"(${left.pretty} ${right.pretty})"
 
-  case class Lambda(variable: Pattern, term: Expression) extends Expression:
+  case class Lambda(val variable: Pattern, val term: Expression) extends Expression:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
 
   case class Application(function: Expression, argument: Expression) extends Expression:

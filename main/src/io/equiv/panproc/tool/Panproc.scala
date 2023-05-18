@@ -28,11 +28,11 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
   )
 
   val ccsIterProg = let.rec(
-    P1 = λ("x")(receive("world") * subProcess("P1")),
+    P1 = λ("x")(send("world") * subProcess("P1")),
     subProcess("P1")
   )
   //println(lambda.CallByValueBigStepSemantics(ccsIterProg).asTransitionSystem())
-  println(Semantics(constructorTest).semantics())
+  println(Semantics(ccsProg).semantics())
 
   //println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
 

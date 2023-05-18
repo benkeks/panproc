@@ -46,6 +46,29 @@ class CallByValueBigStepSemantics(expr: Expression)
       yield (variable, Bind(rr, value))
     }
 
+  def patternCanMatch(pattern: Pattern, expression: Expression): Boolean =
+    pattern match
+      case Variable(name) =>
+        expression match
+          case Variable(rightName) =>
+            name == rightName
+          case Bind(env, Variable(rightName)) =>
+            //TODO: Likely should check boundedness
+            name == rightName
+          case _ =>
+            true
+      case valuePattern: Literal =>
+        valuePattern == expression
+      case Constructor(left, right) =>
+        expression match
+          case Application(function, argument) =>
+            patternCanMatch(left, function) &&
+              patternCanMatch(right, argument)
+          case Bind(env, term) =>
+            patternCanMatch(pattern, term)
+          case _ =>
+            false
+
   def matchPattern(pattern: Pattern, expression: Expression): List[(String, Expression)] =
     pattern match
       case Variable(name) =>
@@ -53,6 +76,9 @@ class CallByValueBigStepSemantics(expr: Expression)
           expression match
             case Variable(rightName) if name != rightName =>
               throw Exception(s"Constructors $pattern and $expression do not match.")
+            case Bind(env, Variable(rightName)) if name != rightName =>
+              //TODO: Likely should check boundedness
+              throw Exception(s"Constructors $pattern and $rightName do not match.")
             case _ =>
               expression
         ))
@@ -81,20 +107,28 @@ class CallByValueBigStepSemantics(expr: Expression)
       (step, result) <- e match
         case Variable(variable) =>
           for
-            v <- env.get(variable).toList
+            v <- env.get(variable).orElse(Some(e)).toList
           yield BigStep() -> v
         case el @ Lambda(variables, term) =>
           List(BigStep() -> Bind(env, el))
         case Application(function, argument) =>
           for
-            case (BigStep(), Bind(funEnv, Lambda(pattern, funTerm))) <- localSemantics(env)(
-              function
-            )
-            case (BigStep(), argValue) <- localSemantics(env)(argument)
-            variableMatching = matchPattern(pattern, argValue)
-            callEnv = funEnv.push(variableMatching)
-            callStep <- localSemantics(callEnv)(funTerm)
-          yield callStep
+            fun <- localSemantics(env)(function)
+            step <- fun match
+              case (BigStep(), Bind(funEnv, Lambda(pattern, funTerm))) =>
+                for
+                  case (BigStep(), argValue) <- localSemantics(env)(argument)
+                  if patternCanMatch(pattern, argValue)
+                  variableMatching = matchPattern(pattern, argValue)
+                  callEnv = funEnv.push(variableMatching)
+                  callStep <- localSemantics(callEnv)(funTerm)
+                yield callStep
+              case (BigStep(), pattern) =>
+                for
+                  case (BigStep(), argValue) <- localSemantics(env)(argument)
+                yield
+                  (BigStep(), Application(pattern, argValue))
+          yield step
         case LetRec(definitions, in) =>
           localSemantics(mkRec(env, definitions))(in)
         case Bind(cEnv, term) =>

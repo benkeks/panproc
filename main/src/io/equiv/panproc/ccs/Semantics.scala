@@ -2,24 +2,57 @@ package io.equiv.panproc.ccs
 
 import io.equiv.panproc.ts.AbstractOperationalSemantics
 import io.equiv.panproc.lambda.CallByValueBigStepSemantics
-import io.equiv.panproc.lambda.Syntax.Expression
 import io.equiv.panproc.lambda.Environment
-import io.equiv.panproc.ccs.Syntax.ProcessExpression
-import io.equiv.panproc.lambda.Syntax.Application
+import io.equiv.panproc.ccs.Syntax.*
+import io.equiv.panproc.lambda.Syntax.*
+import io.equiv.panproc.lambda.CallByValueBigStepSemantics.Bind
 
 object Semantics:
   abstract class ActionStep extends CallByValueBigStepSemantics.EdgeLabel
 
-  case class SendStep(name: Syntax.Name, payload: Option[Expression]) extends ActionStep:
-    override def toString(): String = payload match
-      case None        => s"$name!⟨⟩"
-      case Some(value) => s"$name!⟨${value.pretty}⟩"
+  case class SendStep(payload: Expression) extends ActionStep:
+    override def toString(): String = s"!${payload.pretty}"
 
-  case class ReceiveStep(name: Syntax.Name) extends ActionStep:
-    override def toString(): String = s"$name()"
+  case class ReceiveStep(pattern: Pattern) extends ActionStep:
+    override def toString(): String = s"${pattern.pretty}"
 
   case class CommunicationStep() extends ActionStep:
     override def toString(): String = "τ"
+
+  /** A place in a term expecting to be filled. */
+  case class Hole() extends Intermediate:
+    override def pretty = "⋅"
+
+  def fillHole(e: Expression, withExpression: Expression): Expression = e match
+    case Variable(name) => e
+    case Lambda(variable, term) => Lambda(variable, fillHole(term, withExpression))
+    case Application(function, argument) => Application(fillHole(function, withExpression), fillHole(argument, withExpression))
+    case Hole() => withExpression
+    case Send(emitted, continuation) => Send(fillHole(emitted, withExpression), fillHole(continuation, withExpression))
+    case Receive(Lambda(variable, term)) => Receive(Lambda(variable, fillHole(term, withExpression)))
+    case LetRec(definitions, in) => LetRec(definitions.map {
+      case Definition(pattern, value) => Definition(pattern, fillHole(value, withExpression))
+    }, fillHole(in, withExpression))
+    case Choice(procs) => Choice(procs.map(fillHole(_, withExpression)))
+    case Parallel(procs) => Parallel(procs.map(fillHole(_, withExpression)))
+    case Restrict(names, proc) => Restrict(names, fillHole(proc, withExpression))
+    case Bind(env, term) => Bind(env, fillHole(term, withExpression))
+    case l: Literal => l
+    case i: Intermediate => i
+
+  def hasHole(e: Expression): Boolean = e match
+    case Bind(env, term) => hasHole(term)
+    case Lambda(variable, term) => hasHole(term)
+    case Send(emitted, continuation) => hasHole(emitted) || hasHole(continuation)
+    case Application(function, argument) => hasHole(function) || hasHole(argument)
+    case Hole() => true
+    case Receive(receiver) => hasHole(receiver)
+    case Choice(procs) => procs.exists(hasHole(_))
+    case LetRec(definitions, in) => definitions.exists(d => hasHole(d.value)) || hasHole(in)
+    case Parallel(procs) => procs.exists(hasHole(_))
+    case Restrict(names, proc) => hasHole(proc)
+    case _ => false
+
 
 class Semantics(mainExpr: Expression)
     extends CallByValueBigStepSemantics(mainExpr):
@@ -30,63 +63,65 @@ class Semantics(mainExpr: Expression)
   override def localSemantics(env: Environment)(e: Expression): Iterable[(EdgeLabel, Expression)] =
     for
       (step: EdgeLabel, result: Expression) <- e match
-        case Syntax.Send(Syntax.Label(name, argument), proc) =>
-          val arg =
-            for
-              a <- argument
-              (_, value) <- super.localSemantics(env)(a).headOption
-            yield value
-          List(SendStep(name, arg) -> proc)
-        case Syntax.Receive(Syntax.Label(name, _), proc) =>
-          List(ReceiveStep(name) -> proc)
-        case Syntax.Choice(procs) =>
+        case Send(argument, continuation) =>
+          for
+            case (_, payload) <- super.localSemantics(env)(argument).take(1)
+          yield SendStep(payload) -> continuation
+        case Receive(Lambda(pattern, proc)) =>
+          List(
+            ReceiveStep(pattern) ->
+              Application(Lambda(pattern, proc), Hole())
+          )
+        case Choice(procs) =>
           procs.flatMap(localSemantics(env)(_))
-        case Syntax.Parallel(procs) =>
+        case Parallel(procs) =>
           val initialSteps = procs.map(localSemantics(env)(_))
           val initialStepsGrouped =
             initialSteps.map(_.groupBy { _._1 }).zipWithIndex
-          val newSyncSteps =
+          val newSyncSteps: Iterable[(EdgeLabel, Expression)] =
             for
               (initsP, iP) <- initialStepsGrouped
               (initsQ, iQ) <- initialStepsGrouped
               if iP != iQ
-              case (SendStep(a, payload), pContAs) <- initsP
-              qContAr <- initsQ.get(ReceiveStep(a)).toList
+              case (SendStep(payload), pContAs) <- initsP
+              qContAr <- initsQ.view.collect {
+                case (ReceiveStep(pattern), continuation) if patternCanMatch(pattern, payload) => continuation
+              }
               (_, pAs) <- pContAs
               (_, qAr) <- qContAr
               newProcs = procs.zipWithIndex.map { case (p, i) =>
                 if i == iP then
                   pAs
                 else if i == iQ then
-                  payload match
-                    case None       => qAr
-                    case Some(data) => Application(qAr, data)
+                  fillHole(qAr, payload)
                 else
                   p
               }
-            yield CommunicationStep() -> Syntax.Parallel(newProcs)
+            yield CommunicationStep() -> Parallel(newProcs)
           val newInterleavedSteps =
             for
               (initsP, iP) <- initialSteps.zipWithIndex
               (a, p) <- initsP
               newProcs = procs.updated(iP, p)
-            yield a -> Syntax.Parallel(newProcs)
-          newSyncSteps ++ newInterleavedSteps
-        case Syntax.Restrict(names, proc) =>
+            yield a -> Parallel(newProcs)
+          (newSyncSteps ++ newInterleavedSteps)
+        case Restrict(restrictedPatterns, proc) =>
           for
             (a, p) <- localSemantics(env)(proc)
             if a match
-              case SendStep(name, _) =>
-                !names.contains(name)
-              case ReceiveStep(name) =>
-                !names.contains(name)
+              case SendStep(payload) =>
+                !restrictedPatterns.exists(patternCanMatch(_, payload))
+              case ReceiveStep(pattern: Expression) =>
+                !restrictedPatterns.exists(patternCanMatch(_, pattern))
               case _ =>
                 true
-          yield a -> Syntax.Restrict(names, p)
+          yield a -> Restrict(restrictedPatterns, p)
+        case Hole() =>
+          List(BigStep() -> Hole())
         case other =>
           super.localSemantics(env)(other)
       (finishingStep, finalizedResult) <-
-        if isValue(result) then
+        if isValue(result) || hasHole(result) then
           List(step -> result)
         else
           super.localSemantics(env)(result).filter(
