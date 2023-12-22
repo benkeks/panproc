@@ -51,9 +51,9 @@ class LabeledRelation[E, L](val rep: Map[E, Map[L, Set[E]]]):
     yield (e1, l, e2)
   }.toSet
 
-  lazy val inverseRep =
+  lazy val inverseRep: Map[E, Map[L, Set[E]]] =
     val invTuples = tupleSet.map { case (e1, l, e2) => (e2, l, e1) }
-    invTuples.groupBy(_._1).view.mapValues(_.groupBy(_._2).view.mapValues(_.map(_._3)))
+    invTuples.groupBy(_._1).view.mapValues(_.groupBy(_._2).view.mapValues(_.map(_._3)).toMap).toMap
 
   lazy val lhs = rep.keySet
   lazy val labels = rep.values.flatMap(_.keySet)
