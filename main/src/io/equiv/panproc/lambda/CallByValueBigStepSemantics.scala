@@ -15,6 +15,7 @@ object CallByValueBigStepSemantics:
 
   case class Bind(env: Environment, term: Expression) extends Intermediate:
     override def pretty = s"{${term.pretty}}"
+    override def prettyTex = s"{${term.prettyTex}}"
 
     def unpacked(): Expression = term match
       case b: Bind => b.unpacked()

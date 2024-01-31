@@ -5,22 +5,29 @@ object Syntax:
   abstract sealed class Expression:
     def apply(other: Expression) = Application(this, other)
     def pretty: String
+    def prettyTex: String
 
   trait Pattern:
     def pretty: String
+    def prettyTex: String
 
   case class Variable(name: String) extends Expression, Pattern:
     override def toString() = name
     def pretty: String = name
+    def prettyTex: String = s"\\mathit{$name}"
 
   case class Constructor(left: Pattern, right: Pattern) extends Pattern:
     def pretty: String = s"(${left.pretty} ${right.pretty})"
+    def prettyTex: String = s"(${left.prettyTex} ${right.prettyTex})"
 
   case class Lambda(val variable: Pattern, val term: Expression) extends Expression:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
+    override def prettyTex = s"(\\lambda ${variable.prettyTex} \\ldotp  ${term.prettyTex})"
 
   case class Application(function: Expression, argument: Expression) extends Expression:
     override def pretty = s"${function.pretty} ${argument.pretty}"
+    override def prettyTex = s"${function.prettyTex} \\left( ${argument.prettyTex} \\right)"
+
     def toPattern(): Pattern =
       Constructor(
         function match
@@ -42,17 +49,21 @@ object Syntax:
 
   case class Definition(pattern: Pattern, value: Expression):
     def pretty = s"${pattern.pretty} = ${value.pretty}"
+    def prettyTex = s"${pattern.prettyTex} := ${value.prettyTex}"
 
   case class LetRec(definitions: List[Definition], in: Expression) extends Expression:
     override def pretty = s"letrec ${definitions.map(_.pretty).mkString("; ")} in ${in.pretty}"
+    override def prettyTex = s"\\mathsf{let rec}\\; ${definitions.map(_.prettyTex).mkString("; \\; ")} \\;\\mathsf{in}\\; ${in.prettyTex}"
 
   abstract class Literal extends Expression, Pattern
 
   case class Number(number: Int) extends Literal:
     override def pretty: String = number.toString()
+    override def prettyTex: String = pretty
 
   case class Unit() extends Literal:
     override def pretty: String = "()"
+    override def prettyTex: String = "()"
 
   trait Intermediate extends Expression
 

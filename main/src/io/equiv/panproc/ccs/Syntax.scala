@@ -22,6 +22,10 @@ object Syntax:
       val ps = continuation.pretty
       emitted.pretty + "!." + (if ps.contains(" ") then "(" + ps + ")" else ps)
 
+    override def prettyTex =
+      val ps = continuation.prettyTex
+      s"\\overline{${emitted.prettyTex}} \\ldotp" + (if ps.contains(" ") then "(" + ps + ")" else ps)
+
     infix def *(continuation: Expression) =
         Send(emitted, continuation)
 
@@ -30,6 +34,10 @@ object Syntax:
     override def pretty =
       val ps = receiver.term.pretty
       receiver.variable.pretty + "." + (if ps.contains(" ") then "(" + ps + ")" else ps)
+
+    override def prettyTex =
+      val ps = receiver.term.prettyTex
+      receiver.variable.prettyTex + "\\ldotp" + (if ps.contains(" ") then "(" + ps + ")" else ps)
 
     infix def *(continuation: Expression) =
         Receive(Lambda(receiver.variable, continuation))
@@ -43,6 +51,13 @@ object Syntax:
         val str = procs.map(_.pretty).mkString(" + ")
         if str.contains("|") then "(" + str + ")" else str
 
+    override def prettyTex =
+      if procs.isEmpty then
+        "0"
+      else
+        val str = procs.map(_.prettyTex).mkString(" + ")
+        if str.contains("\\mid") then "(" + str + ")" else str
+
 
   case class Parallel(val procs: List[Expression]) extends ProcessExpression():
 
@@ -52,6 +67,12 @@ object Syntax:
       else
         procs.map(_.pretty).mkString(" | ")
 
+    override def prettyTex =
+      if procs.isEmpty then
+        "0"
+      else
+        procs.map(_.prettyTex).mkString(" \\mid ")
+
 
   case class Restrict(val names: List[Pattern], val proc: Expression)
       extends ProcessExpression():
@@ -59,6 +80,10 @@ object Syntax:
     override def pretty =
       val ps = proc.pretty
       (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" ⧹ {", ",", "}")
+
+    override def prettyTex =
+      val ps = proc.prettyTex
+      (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" \\setminus \\left\\{", ",", "\\right\\}")
 
 
   object Notation:

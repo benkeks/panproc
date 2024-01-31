@@ -8,5 +8,8 @@ object LatexPrint:
   def setup(): Unit =
     Displayers.register(classOf[Syntax.Expression], new Displayer[Syntax.Expression] {
       override def display(expr: Syntax.Expression): java.util.Map[String, String] =
-        Map("text/plain" -> expr.pretty).asJava
+        Map(
+          "text/plain" -> expr.pretty,
+          "text/latex" -> s"$$${expr.prettyTex}$$"
+        ).asJava
     })

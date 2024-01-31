@@ -22,6 +22,7 @@ object Semantics:
   /** A place in a term expecting to be filled. */
   case class Hole() extends Intermediate:
     override def pretty = "⋅"
+    override def prettyTex = "\\cdot"
 
   def fillHole(e: Expression, withExpression: Expression): Expression = e match
     case Variable(name) => e
