@@ -10,6 +10,6 @@ object LatexPrint:
       override def display(expr: Syntax.Expression): java.util.Map[String, String] =
         Map(
           "text/plain" -> expr.pretty,
-          "text/latex" -> s"$$${expr.prettyTex}$$"
+          "text/latex" -> s"$$\\begin{array}{l}${expr.prettyTex}\\end{array}$$"
         ).asJava
     })

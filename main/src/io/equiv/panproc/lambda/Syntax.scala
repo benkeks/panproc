@@ -53,7 +53,7 @@ object Syntax:
 
   case class LetRec(definitions: List[Definition], in: Expression) extends Expression:
     override def pretty = s"letrec ${definitions.map(_.pretty).mkString("; ")} in ${in.pretty}"
-    override def prettyTex = s"\\mathsf{let rec}\\; ${definitions.map(_.prettyTex).mkString("; \\; ")} \\;\\mathsf{in}\\; ${in.prettyTex}"
+    override def prettyTex = s"\\mathsf{let rec}\\\\\\quad ${definitions.map(_.prettyTex).mkString(" \\\\\\quad ")} \\\\ \\mathsf{in}\\; ${in.prettyTex}"
 
   abstract class Literal extends Expression, Pattern
 
