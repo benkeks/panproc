@@ -26,8 +26,16 @@ object Syntax:
       val ps = continuation.prettyTex
       s"\\overline{${emitted.prettyTex}} \\ldotp" + (if ps.contains(" ") then "(" + ps + ")" else ps)
 
-    infix def *(continuation: Expression) =
-        Send(emitted, continuation)
+    infix def *(newContinuation: Expression): Send =
+      continuation match
+      case Notation.nullProcess =>
+        Send(emitted, newContinuation)
+      case s @ Send(_, _) =>
+        Send(emitted, s * newContinuation)
+      case r @ Receive(_) =>
+        Send(emitted, r * newContinuation)
+      case _ =>
+        throw Exception(s"Can't suffix a $continuation in CCS.")
 
   case class Receive(val receiver: Lambda) extends ProcessExpression():
 
@@ -39,8 +47,16 @@ object Syntax:
       val ps = receiver.term.prettyTex
       receiver.variable.prettyTex + "\\ldotp" + (if ps.contains(" ") then "(" + ps + ")" else ps)
 
-    infix def *(continuation: Expression) =
-        Receive(Lambda(receiver.variable, continuation))
+    infix def *(newContinuation: Expression): Receive =
+      receiver.term match
+      case Notation.nullProcess =>
+        Receive(Lambda(receiver.variable, newContinuation))
+      case s @ Send(_, _) =>
+        Receive(Lambda(receiver.variable, s * newContinuation))
+      case r @ Receive(_) =>
+        Receive(Lambda(receiver.variable, r * newContinuation))
+      case _ =>
+        throw Exception(s"Can't suffix a ${receiver.term} in CCS.")
 
   case class Choice(val procs: List[Expression]) extends ProcessExpression():
 
