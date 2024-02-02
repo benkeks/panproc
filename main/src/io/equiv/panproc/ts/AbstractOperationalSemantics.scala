@@ -19,6 +19,11 @@ trait AbstractOperationalSemantics[E, Env, S, A, L](mainExpr: E):
     val (steps, nodes) = semantics()
     TransitionSystem(steps, nodes)
 
+  def asGraphvizString() = {
+    val (steps, nodes) = semantics()
+    steps.toGraphString()
+  }
+
   def semantics(): (LabeledRelation[S, A], Map[S, L]) =
     val (procEnv, initialProcs) = globalEnvironment(mainExpr)
     initialProcs.foreach(scheduleConversion)
