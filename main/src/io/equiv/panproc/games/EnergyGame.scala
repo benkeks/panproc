@@ -1,6 +1,6 @@
 package io.equiv.panproc.game
 
-trait EnergyGame extends SimpleGame with GameLazyDecision[EnergyGame.Energy]:
+trait EnergyGame extends Game with GameLazyDecision[EnergyGame.Energy]:
 
   import EnergyGame.*
 

@@ -1,10 +1,12 @@
 package io.equiv.panproc.game
 
-trait ReachabilityGame extends SimpleGame with GameLazyDecision[Boolean]:
+import io.equiv.panproc.game.Game
 
-  val initialPositions: Iterable[SimpleGame.GameNode]
+trait ReachabilityGame extends Game with GameLazyDecision[Boolean]:
 
-  def computeSuccessors(gn: SimpleGame.GameNode): Iterable[SimpleGame.GameNode]
+  val initialPositions: Iterable[Game.GameNode]
+
+  def computeSuccessors(gn: Game.GameNode): Iterable[Game.GameNode]
 
   private val WinPrice = Some(true)
 

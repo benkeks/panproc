@@ -1,7 +1,7 @@
 package io.equiv.panproc.game
 
 trait GameLazyDecision[P] extends GameDiscovery:
-  self: SimpleGame =>
+  self: Game =>
 
   /** part of the game that can be reached from the initial nodes starting in the `initialNodes`.
     * (warning: mutable!)

@@ -1,7 +1,7 @@
 package io.equiv.panproc.game
 
 trait GameDiscovery:
-  self: SimpleGame =>
+  self: Game =>
 
   /** part of the game that can be reached from the initial nodes starting in the `initialNodes`.
     * (warning: mutable!)
@@ -13,7 +13,7 @@ trait GameDiscovery:
   * for discovered nodes `successorNum`.
   */
 trait DefaultGameDiscovery extends GameDiscovery:
-  self: SimpleGame =>
+  self: Game =>
 
   /** which nodes to start the discovery in. */
   def initialNodes: Iterable[GameNode]

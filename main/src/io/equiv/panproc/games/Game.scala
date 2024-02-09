@@ -1,16 +1,16 @@
 package io.equiv.panproc.game
 
-trait SimpleGame:
+trait Game:
 
-  type GameNode = SimpleGame.GameNode
-  type AttackerNode = SimpleGame.AttackerNode
-  type DefenderNode = SimpleGame.DefenderNode
+  type GameNode = Game.GameNode
+  type AttackerNode = Game.AttackerNode
+  type DefenderNode = Game.DefenderNode
 
   def successors(gn: GameNode): Iterable[GameNode]
 
   def predecessors(gn: GameNode): Iterable[GameNode]
 
-object SimpleGame:
+object Game:
 
   abstract class GameNode
   abstract class AttackerNode extends GameNode
