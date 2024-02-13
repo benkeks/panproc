@@ -60,7 +60,7 @@ class HMLInterpreter[S, A, L](
           s1 <- ts.silentReachable(s)
         yield makeNode(s1, andThen)
 
-  def isTrueAt(f: Formula[A], states: Iterable[S]) =
+  def isTrueAt(f: Formula[A], states: Iterable[S]): Map[S, Boolean] =
     val interpretationGame = new HMLFormulaGame(f, states)
     val result =
       for

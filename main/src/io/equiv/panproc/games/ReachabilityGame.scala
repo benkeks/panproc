@@ -1,7 +1,5 @@
 package io.equiv.panproc.game
 
-import io.equiv.panproc.game.Game
-
 trait ReachabilityGame extends Game with GameLazyDecision[Boolean]:
 
   val initialPositions: Iterable[Game.GameNode]
