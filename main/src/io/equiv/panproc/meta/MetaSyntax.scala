@@ -13,7 +13,7 @@ object MetaSyntax:
   abstract class MetaJudgment extends MetaExpression
 
   case class MetaRule(
-    metaVariables: List[String],
+    name: String,
     premisses: List[MetaExpression],
     conclusion: MetaExpression
   ) extends MetaExpression
