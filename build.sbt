@@ -8,6 +8,7 @@ lazy val root = project
     scalaVersion := scala3Version,
     resolvers += "jitpack" at "https://jitpack.io",
     Compile / scalaSource := baseDirectory.value / "main" / "src",
+    Test / scalaSource := baseDirectory.value / "test" / "src",
     scalacOptions += "-deprecation",
     libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test,
     libraryDependencies += "com.github.jupyter" % "jvm-repr" % "0.4.0",
