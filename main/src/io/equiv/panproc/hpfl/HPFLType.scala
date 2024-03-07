@@ -15,7 +15,7 @@ enum Variance:
 
   def supertypes = this match
     case None => Set(None)
-    case Any => Set(None, Any, Pos, Neg)
+    case Any => Set(None, Pos, Neg, Any)
     case Pos => Set(None, Pos)
     case Neg => Set(None, Neg)
 
@@ -31,11 +31,11 @@ enum Variance:
 
   def invCompose(result: Variance) = result match
     case None => this match
-      case None => Set(None, Any, Pos, Neg)
+      case None => Set(None, Pos, Neg, Any)
       case _ => Set(None)
     case Any => this match
       case None => Set()
-      case Any => Set(Any, Pos, Neg)
+      case Any => Set(Pos, Neg, Any)
       case _ => Set(Any)
     case Pos => this match
       case Pos => Set(Pos)
