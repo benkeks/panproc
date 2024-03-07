@@ -47,7 +47,7 @@ class HPFLSuite extends munit.FunSuite:
               'Y',
               and(Set(
                 biimpl(variable('X'), variable('Y')),
-                app(app(neg(variable('F')), variable('X')), variable('Y'))
+                app(app(neg(variable('F')), obs('a', 1, variable('X'))), obs('a', 2, variable('Y')))
               ))
             )
           ))
