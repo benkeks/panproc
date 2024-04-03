@@ -1,6 +1,8 @@
 package hpfltest
 
 import io.equiv.panproc.hpfl.*
+import io.equiv.panproc.ts.TransitionSystem
+import io.equiv.panproc.relations.LabeledRelation
 import munit.*
 
 class HPFLSuite extends munit.FunSuite:
@@ -33,29 +35,59 @@ class HPFLSuite extends munit.FunSuite:
   }
 
   test("typecheck trace equivalence") {
-    def or(a: HPFLCore[Char, Char, Unit], b: HPFLCore[Char, Char, Unit]) =
-      neg(and(Set(neg(a), neg(b))))
-    def biimpl(a: HPFLCore[Char, Char, Unit], b: HPFLCore[Char, Char, Unit]) =
-      and(Set(or(a, b), or(neg(a), neg(b))))
-    val formula = app(
+    val formula =
       app(
-        neg(mu(
-          'F',
-          neg(lam(
-            'X',
+        app(
+          nu(
+            'F',
             lam(
-              'Y',
-              and(Set(
-                biimpl(variable('X'), variable('Y')),
-                app(app(neg(variable('F')), obs('a', 1, variable('X'))), obs('a', 2, variable('Y')))
-              ))
+              'X',
+              lam(
+                'Y',
+                and(Set(
+                  iff(variable('X'), variable('Y')),
+                  app(app(variable('F'), obs('a', 1, variable('X'))), obs('a', 2, variable('Y')))
+                ))
+              )
             )
-          ))
-        )),
+          ),
+          top
+        ),
         top
-      ),
-      top
-    )
+      )
     val result = typecheck(formula)
     assert(result.isDefined)
+  }
+
+  test("eval trace equivalence") {
+    val formula =
+      app(
+        app(
+          nu(
+            'F',
+            lam(
+              'X',
+              lam(
+                'Y',
+                and(Set(
+                  iff(variable('X'), variable('Y')),
+                  app(app(variable('F'), obs('a', 1, variable('X'))), obs('a', 2, variable('Y'))),
+                  app(app(variable('F'), obs('b', 1, variable('X'))), obs('b', 2, variable('Y')))
+                ))
+              )
+            )
+          ),
+          top
+        ),
+        top
+      )
+    val result = typecheck(formula)
+    val lts1 =
+      TransitionSystem(LabeledRelation((0, 'b', 1), (1, 'a', 1), (1, 'b', 0)), Map(0 -> 0, 1 -> 1))
+    val lts2 = TransitionSystem(
+      LabeledRelation((2, 'b', 3), (3, 'a', 4), (3, 'b', 2), (4, 'a', 3), (4, 'b', 2)),
+      Map(2 -> 2, 3 -> 3, 4 -> 4)
+    )
+    val evalResult = eval(result.get, List(), Map(), Map(), List(lts1, lts2))
+    println(evalResult)
   }
