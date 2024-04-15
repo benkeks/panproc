@@ -90,6 +90,7 @@ class HPFLSuite extends munit.FunSuite:
       Map(2 -> 2, 3 -> 3, 4 -> 4)
     )
     val evalResult = eval(result.get, List(), Map(), Map(), List(lts1, lts2))
+    assert(evalResult == Ok(Set(List(1,3), List(1,4), List(0,2))))
   }
 
   test("eval simulation") {
@@ -104,7 +105,7 @@ class HPFLSuite extends munit.FunSuite:
       Map(2 -> 2, 3 -> 3, 4 -> 4)
     )
     val evalResult = eval(result.get, List(), Map(), Map(), List(lts1, lts2))
-    println(evalResult)
+    assert(evalResult == Ok(Set(List(1,3), List(1,4), List(0,2))))
   }
 
   test("check default trace equivalence") {
@@ -115,5 +116,5 @@ class HPFLSuite extends munit.FunSuite:
       Map(2 -> 2, 3 -> 3, 4 -> 4)
     )
     val result = DefaultEquivalences.trace.check(List(lts1, lts2))
-    println(result)
+    assert(result == Some(Set(List(1,3), List(1,4), List(0,2))))
   }
