@@ -32,63 +32,63 @@ def firstSome[A,B](xs: Iterable[A], f: A => Option[B]): Option[B] =
   xs.foldRight[Option[B]](None)((x, acc) => f(x).orElse(acc))
 
 def typecheck[A, V, L](
-    expr: HPFLCore[A, V, L],
+    expr: HPFLCore.HPFLCore[A, V, L],
     dtype: HPFLType = Ground,
     env: TypeEnvironment[V] = emptyTypeEnvironment[V]
-): Option[HPFLCore[A, V, HPFLType]] =
+): Option[HPFLCore.HPFLCore[A, V, HPFLType]] =
   expr match
-    case Top(_) => if dtype == Ground then Some(Top(Ground)) else None
+    case HPFLCore.Top(_) => if dtype == Ground then Some(HPFLCore.Top(Ground)) else None
 
-    case Variable(value, _) =>
+    case HPFLCore.Variable(value, _) =>
       for
         (variance, vtype) <- env.get(value)
         if variance == Variance.Any || variance == Variance.Pos
-      yield Variable(value, dtype)
+      yield HPFLCore.Variable(value, dtype)
 
-    case Neg(subterm, _) =>
+    case HPFLCore.Neg(subterm, _) =>
       for
         subterm1 <- typecheck(subterm, dtype, env.negate)
-      yield Neg(subterm1, dtype)
+      yield HPFLCore.Neg(subterm1, dtype)
 
-    case And(subterms, _) =>
+    case HPFLCore.And(subterms, _) =>
       if dtype == Ground then
         for
           subterms1 <- sequence(subterms.map(typecheck(_, dtype, env)))
-        yield And(subterms1.toSet, dtype)
+        yield HPFLCore.And(subterms1.toSet, dtype)
       else None
 
-    case Observe(action, index, subterm, _) =>
+    case HPFLCore.Observe(action, index, subterm, _) =>
       if dtype == Ground then
         for
           subterm1 <- typecheck(subterm, dtype, env)
-        yield Observe(action, index, subterm1, dtype)
+        yield HPFLCore.Observe(action, index, subterm1, dtype)
       else None
 
-    case Lambda(variable, body, _) =>
+    case HPFLCore.Lambda(variable, body, _) =>
       dtype match
         case Arrow(variance, next) =>
           if env.contains(variable) then None
           else
             for
               body1 <- typecheck(body, next, env.updated(variable, (variance, Ground)))
-            yield Lambda(variable, body1, dtype)
+            yield HPFLCore.Lambda(variable, body1, dtype)
         case Ground => None
 
-    case Mu(variable, body, _) =>
+    case HPFLCore.Mu(variable, body, _) =>
       if env.contains(variable) then None
       else
         for
           body1 <- typecheck(body, dtype, env.updated(variable, (Variance.Pos, dtype)))
-        yield Mu(variable, body1, dtype)
+        yield HPFLCore.Mu(variable, body1, dtype)
 
-    case Application(transformer, argument, _) =>
+    case HPFLCore.Application(transformer, argument, _) =>
       val envs1 = env.supertypes
       def envs2(v: Variance) = env.invCompose(v)
-      allVariances.foldLeft[Option[HPFLCore[A, V, HPFLType]]](None)((acc, v) =>
+      allVariances.foldLeft[Option[HPFLCore.HPFLCore[A, V, HPFLType]]](None)((acc, v) =>
         acc.orElse(
           for
             transformer1 <- firstSome(envs1, env => typecheck(transformer, Arrow(v, dtype), env))
             argument1 <- firstSome(envs2(v), env => typecheck(argument, Ground, env))
-          yield Application(transformer1, argument1, dtype)
+          yield HPFLCore.Application(transformer1, argument1, dtype)
         )
       )

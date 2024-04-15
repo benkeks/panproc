@@ -1,6 +1,7 @@
 package hpfltest
 
 import io.equiv.panproc.hpfl.*
+import io.equiv.panproc.hpfl.HPFLCore.*
 import io.equiv.panproc.ts.TransitionSystem
 import io.equiv.panproc.relations.LabeledRelation
 import munit.*
@@ -89,5 +90,30 @@ class HPFLSuite extends munit.FunSuite:
       Map(2 -> 2, 3 -> 3, 4 -> 4)
     )
     val evalResult = eval(result.get, List(), Map(), Map(), List(lts1, lts2))
+  }
+
+  test("eval simulation") {
+    def helper(c: Char) = nec(c, 1, obs(c, 2, variable('X')))
+    val formula =
+      nu('X', and(Set(helper('a'), helper('b'))))
+    val result = typecheck(formula)
+    val lts1 =
+      TransitionSystem(LabeledRelation((0, 'b', 1), (1, 'a', 1), (1, 'b', 0)), Map(0 -> 0, 1 -> 1))
+    val lts2 = TransitionSystem(
+      LabeledRelation((2, 'b', 3), (3, 'a', 4), (3, 'b', 2), (4, 'a', 3), (4, 'b', 2)),
+      Map(2 -> 2, 3 -> 3, 4 -> 4)
+    )
+    val evalResult = eval(result.get, List(), Map(), Map(), List(lts1, lts2))
     println(evalResult)
+  }
+
+  test("check default trace equivalence") {
+    val lts1 =
+      TransitionSystem(LabeledRelation((0, 'b', 1), (1, 'a', 1), (1, 'b', 0)), Map(0 -> 0, 1 -> 1))
+    val lts2 = TransitionSystem(
+      LabeledRelation((2, 'b', 3), (3, 'a', 4), (3, 'b', 2), (4, 'a', 3), (4, 'b', 2)),
+      Map(2 -> 2, 3 -> 3, 4 -> 4)
+    )
+    val result = DefaultEquivalences.trace.check(List(lts1, lts2))
+    println(result)
   }

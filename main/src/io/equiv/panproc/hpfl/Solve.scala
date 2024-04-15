@@ -34,7 +34,7 @@ def fixM[V, E](f: V => Result[V, E], v: V): Result[V, E] =
   f(v).flatMap(v1 => if v == v1 then Ok(v) else fixM(f, v1))
 
 def eval[S, A, V, L](
-    formula: HPFLCore[A, V, HPFLType],
+    formula: HPFLCore.HPFLCore[A, V, HPFLType],
     stack: EvalStack[S],
     eta: EvalEta[V, S],
     rho: EvalRho[V, S],
@@ -42,8 +42,8 @@ def eval[S, A, V, L](
 ): Result[Relation[S], EvalStack[S]] =
   val completeRelation = cross(ltss.map(_.nodes))
   formula match
-    case Top(_) => Ok(completeRelation)
-    case Variable(v, dt) =>
+    case HPFLCore.Top(_) => Ok(completeRelation)
+    case HPFLCore.Variable(v, dt) =>
       if dt == Ground
       then Ok(eta(v))
       else
@@ -51,26 +51,26 @@ def eval[S, A, V, L](
         if t.contains(stack)
         then Ok(t(stack))
         else Error(stack)
-    case Neg(f, _) =>
+    case HPFLCore.Neg(f, _) =>
       for
         r <- eval(f, stack, eta, rho, ltss)
       yield completeRelation -- r
-    case And(fs, _) =>
+    case HPFLCore.And(fs, _) =>
       fs.foldLeft(Ok(completeRelation): Result[Relation[S], EvalStack[S]])((acc, f) =>
         for
           r1 <- acc
           r2 <- eval(f, stack, eta, rho, ltss)
         yield r1 & r2
       )
-    case Observe(a, i, f, _) =>
+    case HPFLCore.Observe(a, i, f, _) =>
       for
         r <- eval(f, stack, eta, rho, ltss)
       yield r.flatMap(e => ltss(i - 1).pre(e(i - 1), a).map(e.updated(i - 1, _)))
-    case Lambda(v, f, _) =>
+    case HPFLCore.Lambda(v, f, _) =>
       eval(f, stack.tail, eta.updated(v, stack.head), rho, ltss)
-    case Mu(v, f, Ground) =>
+    case HPFLCore.Mu(v, f, Ground) =>
       fixM(r => eval(f, stack, eta.updated(v, r), rho, ltss), Set())
-    case Mu(v, f, _) =>
+    case HPFLCore.Mu(v, f, _) =>
       for
         t <- fixM(
           (t: EvalTable[S]) =>
@@ -82,7 +82,7 @@ def eval[S, A, V, L](
           Map(stack -> Set())
         )
       yield t(stack)
-    case Application(f1, f2, _) =>
+    case HPFLCore.Application(f1, f2, _) =>
       for
         r2 <- eval(f2, stack, eta, rho, ltss)
         r1 <- eval(f1, r2 :: stack, eta, rho, ltss)
