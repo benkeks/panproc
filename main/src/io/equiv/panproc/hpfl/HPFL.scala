@@ -9,6 +9,8 @@ object HPFL:
 
   case class ActionsVar[AV](value: AV) extends SetVar[AV]
 
+  case class Complement[AV](set: SetVar[AV]) extends SetVar[AV]
+
   trait Operator[AV]
 
   case class Subset[AV](subset: AV, superset: SetVar[AV]) extends Operator[AV]
@@ -25,6 +27,10 @@ object HPFL:
         setvar match
           case Actions() => Some(ltss.flatMap(_.actions).toSet)
           case ActionsVar(value) => sets.get(value)
+          case Complement(set) =>
+            for
+              set1 <- getSet(set)
+            yield ltss.flatMap(_.actions).toSet -- set1
       def instantiateSubterms(op: Operator[AV], formula: HPFL[AV,V]): Option[Set[HPFLCore.HPFLCore[A,V,Unit]]] =
         op match
           case Subset(subset, superset) =>
