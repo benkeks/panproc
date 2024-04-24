@@ -119,6 +119,71 @@ object TestData:
       List(5, 6)
     ))
 
+  val t5: List[TransitionSystem[Int, Char, Int]] = List(
+    makeTS(
+      (1, 'a', 2),
+      (1, 'a', 5),
+      (2, 'b', 3),
+      (3, 'b', 4),
+      (5, 'b', 6),
+      (6, 'a', 4)
+    ),
+    makeTS(
+      (1, 'a', 2),
+      (2, 'b', 3),
+      (3, 'b', 4),
+      (2, 'b', 5),
+      (5, 'a', 4)
+    )
+  )
+  val t5_success: Option[Set[List[Int]]] = Some(Set(
+    List(1, 1),
+    List(3, 3),
+    List(4, 4),
+    List(6, 5)
+  ))
+  val t5_failure: Option[Set[List[Int]]] = Some(Set(
+    List(3, 3),
+    List(4, 4),
+    List(6, 5)
+  ))
+
+  val t6: List[TransitionSystem[Int, Char, Int]] = List(
+    makeTS(
+      (1, 'a', 2),
+      (1, 'a', 5),
+      (2, 'b', 3),
+      (2, 'b', 4),
+      (4, 'a', 4),
+      (5, 'b', 4)
+    ),
+    makeTS(
+      (1, 'a', 2),
+      (2, 'b', 3),
+      (2, 'b', 4),
+      (4, 'a', 4)
+    )
+  )
+  val t6_success_1: Option[Set[List[Int]]] = Some(Set(
+    List(1, 1),
+    List(2, 2),
+    List(3, 3),
+    List(4, 4),
+    List(5, 2)
+  ))
+  val t6_success_2: Option[Set[List[Int]]] = Some(Set(
+    List(1, 1),
+    List(2, 2),
+    List(3, 3),
+    List(4, 4)
+  ))
+
+  val t6_failure: Option[Set[List[Int]]] = Some(Set(
+    List(2, 2),
+    List(3, 3),
+    List(4, 4)
+  ))
+
 class HPFLSuite extends munit.FunSuite:
   test("typecheck succeeds") {
     val formula: HPFLCore[Char, Char, Unit] = app(
@@ -226,6 +291,8 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.trace.check(TestData.t2) == TestData.t2_success)
     assert(DefaultEquivalences.trace.check(TestData.t3) == TestData.t3_success)
     assert(DefaultEquivalences.trace.check(TestData.t4) == TestData.t4_success)
+    assert(DefaultEquivalences.trace.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.trace.check(TestData.t6) == TestData.t6_success_1)
   }
 
   test("check completed trace equivalence") {
@@ -233,6 +300,8 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.completedTrace.check(TestData.t2) == TestData.t2_success)
     assert(DefaultEquivalences.completedTrace.check(TestData.t3) == TestData.t3_success)
     assert(DefaultEquivalences.completedTrace.check(TestData.t4) == TestData.t4_success)
+    assert(DefaultEquivalences.completedTrace.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.completedTrace.check(TestData.t6) == TestData.t6_success_2)
   }
 
   test("check failures equivalence") {
@@ -240,6 +309,8 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.failures.check(TestData.t2) == TestData.t2_failure)
     assert(DefaultEquivalences.failures.check(TestData.t3) == TestData.t3_success)
     assert(DefaultEquivalences.failures.check(TestData.t4) == TestData.t4_success)
+    assert(DefaultEquivalences.failures.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.failures.check(TestData.t6) == TestData.t6_success_2)
   }
 
   test("check failure trace equivalence") {
@@ -247,6 +318,8 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.failureTrace.check(TestData.t2) == TestData.t2_failure)
     assert(DefaultEquivalences.failureTrace.check(TestData.t3) == TestData.t3_failure)
     assert(DefaultEquivalences.failureTrace.check(TestData.t4) == TestData.t4_success)
+    assert(DefaultEquivalences.failureTrace.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.failureTrace.check(TestData.t6) == TestData.t6_success_2)
   }
 
   test("check readiness equivalence") {
@@ -254,6 +327,8 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.readiness.check(TestData.t2) == TestData.t2_failure)
     assert(DefaultEquivalences.readiness.check(TestData.t3) == TestData.t3_success)
     assert(DefaultEquivalences.readiness.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.readiness.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.readiness.check(TestData.t6) == TestData.t6_success_2)
   }
 
   test("check ready trace equivalence") {
@@ -261,4 +336,51 @@ class HPFLSuite extends munit.FunSuite:
     assert(DefaultEquivalences.readyTrace.check(TestData.t2) == TestData.t2_failure)
     assert(DefaultEquivalences.readyTrace.check(TestData.t3) == TestData.t3_failure)
     assert(DefaultEquivalences.readyTrace.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.readyTrace.check(TestData.t5) == TestData.t5_success)
+    assert(DefaultEquivalences.readyTrace.check(TestData.t6) == TestData.t6_success_2)
+  }
+
+  test("check simulation equivalence") {
+    assert(DefaultEquivalences.simulation.check(TestData.t1) == TestData.t1_success)
+    assert(DefaultEquivalences.simulation.check(TestData.t2) == TestData.t2_failure)
+    assert(DefaultEquivalences.simulation.check(TestData.t3) == TestData.t3_failure)
+    assert(DefaultEquivalences.simulation.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.simulation.check(TestData.t5) == TestData.t5_failure)
+    assert(DefaultEquivalences.simulation.check(TestData.t6) == TestData.t6_success_1)
+  }
+
+  test("check completed simulation equivalence") {
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t1) == TestData.t1_failure)
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t2) == TestData.t2_failure)
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t3) == TestData.t3_failure)
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t5) == TestData.t5_failure)
+    assert(DefaultEquivalences.completedSimulation.check(TestData.t6) == TestData.t6_success_2)
+  }
+
+  test("check ready simulation equivalence") {
+    assert(DefaultEquivalences.readySimulation.check(TestData.t1) == TestData.t1_failure)
+    assert(DefaultEquivalences.readySimulation.check(TestData.t2) == TestData.t2_failure)
+    assert(DefaultEquivalences.readySimulation.check(TestData.t3) == TestData.t3_failure)
+    assert(DefaultEquivalences.readySimulation.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.readySimulation.check(TestData.t5) == TestData.t5_failure)
+    assert(DefaultEquivalences.readySimulation.check(TestData.t6) == TestData.t6_success_2)
+  }
+
+  test("check 2-nested simulation equivalence") {
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t1) == TestData.t1_failure)
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t2) == TestData.t2_failure)
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t3) == TestData.t3_failure)
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t5) == TestData.t5_failure)
+    assert(DefaultEquivalences.twoNestedSimulation.check(TestData.t6) == TestData.t6_success_2)
+  }
+
+  test("check bisimulation equivalence") {
+    assert(DefaultEquivalences.bisimulation.check(TestData.t1) == TestData.t1_failure)
+    assert(DefaultEquivalences.bisimulation.check(TestData.t2) == TestData.t2_failure)
+    assert(DefaultEquivalences.bisimulation.check(TestData.t3) == TestData.t3_failure)
+    assert(DefaultEquivalences.bisimulation.check(TestData.t4) == TestData.t4_failure)
+    assert(DefaultEquivalences.bisimulation.check(TestData.t5) == TestData.t5_failure)
+    assert(DefaultEquivalences.bisimulation.check(TestData.t6) == TestData.t6_failure)
   }

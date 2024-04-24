@@ -146,3 +146,60 @@ object DefaultEquivalences:
       Top(),
       Top()
     )
+  def simulationHelper(index1: Int, index2: Int, varName: Char): HPFL[Char, Char] =
+    AndOp(
+      Element('a', Actions()),
+      ObsNecessary('a', index1, ObsPossible('a', index2, Variable(varName)))
+    )
+
+  val simulation: HPFL[Char, Char] =
+    And(Set(
+      Nu('X', simulationHelper(1, 2, 'X')),
+      Nu('Y', simulationHelper(2, 1, 'Y'))
+    ))
+
+  val completedSimulation: HPFL[Char, Char] =
+    And(Set(
+      Nu(
+        'X',
+        And(Set(
+          IFF(deadlock(1), deadlock(2)),
+          simulationHelper(1, 2, 'X')
+        ))
+      ),
+      Nu(
+        'Y',
+        And(Set(
+          IFF(deadlock(2), deadlock(1)),
+          simulationHelper(2, 1, 'Y')
+        ))
+      )
+    ))
+
+  val readySimulation: HPFL[Char, Char] =
+    And(Set(
+      Nu('X', And(Set(
+        AndOp(Subset('A', Actions()), IFF(ready(1, ActionsVar('A')), ready(2, ActionsVar('A')))),
+        simulationHelper(1, 2, 'X')
+      ))),
+      Nu('Y', And(Set(
+        AndOp(Subset('A', Actions()), IFF(ready(2, ActionsVar('A')), ready(1, ActionsVar('A')))),
+        simulationHelper(2, 1, 'Y')
+      )))
+    ))
+  val twoNestedSimulation: HPFL[Char, Char] =
+    And(Set(
+      Nu('U', And(Set(
+        simulation,
+        simulationHelper(1, 2, 'U')
+      ))),
+      Nu('V', And(Set(
+        simulation,
+        simulationHelper(2, 1, 'V')
+      )))
+    ))
+  val bisimulation: HPFL[Char, Char] =
+    Nu('X', And(Set(
+      simulationHelper(1, 2, 'X'),
+      simulationHelper(2, 1, 'X')
+    )))

@@ -28,7 +28,7 @@ def emptyTypeEnvironment[V]: TypeEnvironment[V] = TypeEnvironment(Map())
 def sequence[A](xs: Iterable[Option[A]]): Option[List[A]] =
   xs.foldRight[Option[List[A]]](Some(Nil))((x, acc) => for (x1 <- x; acc1 <- acc) yield x1 :: acc1)
 
-def firstSome[A,B](xs: Iterable[A], f: A => Option[B]): Option[B] =
+def firstSome[A, B](xs: Iterable[A], f: A => Option[B]): Option[B] =
   xs.foldRight[Option[B]](None)((x, acc) => f(x).orElse(acc))
 
 def typecheck[A, V, L](
@@ -67,16 +67,12 @@ def typecheck[A, V, L](
     case HPFLCore.Lambda(variable, body, _) =>
       dtype match
         case Arrow(variance, next) =>
-          if env.contains(variable) then None
-          else
             for
               body1 <- typecheck(body, next, env.updated(variable, (variance, Ground)))
             yield HPFLCore.Lambda(variable, body1, dtype)
         case Ground => None
 
     case HPFLCore.Mu(variable, body, _) =>
-      if env.contains(variable) then None
-      else
         for
           body1 <- typecheck(body, dtype, env.updated(variable, (Variance.Pos, dtype)))
         yield HPFLCore.Mu(variable, body1, dtype)
