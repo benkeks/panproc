@@ -2,49 +2,46 @@ package io.equiv.panproc.meta
 
 import io.equiv.panproc.lambda
 import io.equiv.panproc.lambda.Syntax.*
+import io.equiv.panproc.lambda.PatternMatching
 
 object MetaSyntax:
 
   abstract sealed class MetaExpression {
     def pretty: String
     def prettyTex: String
+    def substituteAll(substitution: Map[String, Expression]): MetaExpression
   }
 
-  case class MetaJudgment(name: String, parameters: List[MetaValuable[_]]) extends MetaExpression {
+  case class MetaJudgment(name: String, parameters: List[Expression]) extends MetaExpression {
     def pretty: String = s"$name(${parameters.map(_.pretty).mkString(", ")})"
     def prettyTex: String = s"$name(${parameters.map(_.prettyTex).mkString(", ")})"
+
+    def substituteAll(substitution: Map[String, Expression]) =
+      MetaJudgment(name, parameters.map(lambda.Syntax.substituteAll(_, substitution)))
+
+    def matchJudgment(otherJudgment: MetaJudgment): Option[Map[String, Expression]] =
+      if (this.name == otherJudgment.name && this.parameters.length == otherJudgment.parameters.length)
+        val leftPatterns = this.parameters.map(_ match
+            case p: Pattern => Some(p)
+            case appl: Application => Some(appl.toPattern()) 
+            case _ => None
+        )
+        if (leftPatterns.forall(_.isDefined))
+          var environment: Option[Map[String, Expression]] = Some(Map[String, Expression]())
+          for (case (Some(leftPattern), right) <- leftPatterns.zip(otherJudgment.parameters))
+            environment = environment.flatMap{ env =>
+              val rightInstantiated = lambda.Syntax.substituteAll(right, env)
+              if (PatternMatching.patternCanMatch(leftPattern, rightInstantiated))
+                Some(env ++ PatternMatching.matchPattern(leftPattern, rightInstantiated))
+              else
+                None
+            }
+          environment
+        else
+          None
+      else
+        None
   }
-
-  abstract class MetaValuable[T] {
-    def pretty: String
-    def prettyTex: String
-  }
-
-  case class MetaVariable[T](name: String) extends MetaValuable[T]:
-    def pretty: String = name
-    def prettyTex: String = name
-
-
-  case class MetaFactoryN[TI, TO](args: List[MetaValuable[TI]], placeholders: List[TI], factory: List[TI] => TO)
-      extends MetaValuable[TO]:
-    def pretty: String = factory(placeholders).toString()
-    def prettyTex: String = factory(placeholders).toString()
-
-  case class MetaFactory1[TI1, TO](args1: MetaValuable[TI1], placeholder1: TI1, factory: TI1 => TO)
-      extends MetaValuable[TO]:
-    def pretty: String = factory(placeholder1).toString()
-    def prettyTex: String = factory(placeholder1).toString()
-
-  case class MetaFactory2[TI1, TI2, TO](args1: MetaValuable[TI1], placeholder1: TI1, args2: MetaValuable[TI2], placeholder2: TI2,
-    factory: (TI1, TI2) => TO)
-      extends MetaValuable[TO]:
-    def pretty: String = factory(placeholder1, placeholder2).toString()
-    def prettyTex: String = factory(placeholder1, placeholder2).toString()
-
-
-  case class MetaValue[T](value: T) extends MetaValuable[T]:
-    def pretty: String = value.toString()
-    def prettyTex: String = value.toString()
 
   case class MetaRule(
     name: String,
@@ -53,4 +50,19 @@ object MetaSyntax:
   ) extends MetaExpression {
     def pretty: String = premisses.map(_.pretty).mkString("\n") + "\n [" + name + "] --------------\n" + conclusion.pretty
     def prettyTex: String = pretty
+
+    def substituteAll(substitution: Map[String, Expression]): MetaExpression =
+      MetaRule(name, premisses.map(_.substituteAll(substitution)), conclusion.substituteAll(substitution))
+
+    def backwardsStep(goal: MetaJudgment): Option[List[MetaExpression]] =
+      for
+        assignment <- matchConclusion(goal)
+      yield
+        premisses.map(_.substituteAll(assignment))
+
+    def matchConclusion(goal: MetaJudgment): Option[Map[String, Expression]] =
+      conclusion match
+        case conclusionJudgment: MetaJudgment =>
+          conclusionJudgment.matchJudgment(goal)
+        case _ => None
   }

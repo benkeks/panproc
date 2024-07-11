@@ -7,6 +7,10 @@ object Syntax:
     def pretty: String
     def prettyTex: String
 
+  trait DefaultPrettyPrinting(boxed: Any):
+    def pretty: String = boxed.toString()
+    def prettyTex: String = boxed.toString()
+
   trait Pattern:
     def pretty: String
     def prettyTex: String
@@ -66,6 +70,17 @@ object Syntax:
     override def prettyTex: String = "()"
 
   trait Intermediate extends Expression
+
+  // does not check for name clashes (for now)!
+  def substituteAll(expression: Expression, fillIns: Map[String, Expression]): Expression =
+    expression match
+      case Variable(name) if fillIns.isDefinedAt(name) => fillIns(name)
+      case Lambda(variable, term) => Lambda(variable, substituteAll(term, fillIns))
+      case Application(function, argument) => Application(substituteAll(function, fillIns), substituteAll(argument, fillIns))
+      case LetRec(definitions, in) => LetRec(
+        definitions.map { case Definition(pattern, value) => Definition(pattern, substituteAll(value, fillIns)) },
+        substituteAll(in, fillIns))
+      case other => other
 
   object Notation:
 

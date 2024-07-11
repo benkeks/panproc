@@ -3,38 +3,42 @@ package io.equiv.panproc.hml
 import io.equiv.panproc.hml.HennessyMilnerLogic.*
 import io.equiv.panproc.ts.WeakTransitionSystem
 import io.equiv.panproc.meta.MetaSyntax.*
+import io.equiv.panproc.lambda.Syntax.*
 
 class HMLRules[S, A]:
 
-  def HMLSatisfies(p: MetaValuable[S], formula: MetaValuable[Formula[MetaValuable[A]]]) =
-    MetaJudgment("hml_satisfies", List(p, formula))
-  def LTSStep(p0: MetaValuable[S], a: MetaValuable[A], p1: MetaValuable[S]) =
-    MetaJudgment("lts_step", List(p0, a, p1))
-  def LTSInternalStep(p0: MetaValuable[S], p1: MetaValuable[S]) =
-    MetaJudgment("lts_internal_step", List(p0, p1))
+  case class StateLiteral(s: S) extends Literal with DefaultPrettyPrinting(s)
+  case class ActionLiteral(a: A) extends Literal with DefaultPrettyPrinting(a)
+  case class ObservationOperator() extends Literal with DefaultPrettyPrinting("<>")
+  case class ConjunctionOperator() extends Literal with DefaultPrettyPrinting("/\\")
 
   val obsI = MetaRule("obsI",
     List(
-      LTSStep(MetaVariable[S]("p"), MetaVariable[A]("a"), MetaVariable[S]("p'")),
-      HMLSatisfies(MetaVariable[S]("p'"), MetaVariable("𝜑"))
+      MetaJudgment("lts_step", List(Variable("p"), Variable("a"), Variable("p'"))),
+      MetaJudgment("hml_satisfies", List(Variable("p'"), Variable("𝜑")))
     ),
-    HMLSatisfies(MetaVariable[S]("p"), MetaFactory2(
-      MetaVariable("a"), MetaVariable("a").asInstanceOf[MetaValuable[A]],
-      MetaVariable("𝜑"), Placeholder[MetaValuable[A]]("𝜑"), (a, 𝜑) => Observe(a, 𝜑))
-    )
+    MetaJudgment("hml_satisfies", List(Variable("p"), Application(Application(ObservationOperator(), Variable("a")), Variable("𝜑"))))
   )
 
-  def conjI[I](indices: List[I]) =
-    MetaRule("conjI",
-      indices.map(i =>
-        HMLSatisfies(MetaVariable[S]("p"), MetaVariable(s"𝜑_$i"))
-      ),
-      HMLSatisfies(MetaVariable[S]("p"), MetaFactoryN(
-        indices.map(i => MetaVariable(s"𝜑_$i")),
-        indices.map(i => Placeholder(s"𝜑_$i").asInstanceOf[Formula[MetaValuable[A]]]),
-        (𝜑s) => And(𝜑s.toSet))
-      )
+  val conjI2 = MetaRule("conjI2",
+    List(
+      MetaJudgment("hml_satisfies", List(Variable("p"), Variable("𝜑1"))),
+      MetaJudgment("hml_satisfies", List(Variable("p"), Variable("𝜑2")))
+    ),
+    MetaJudgment("hml_satisfies", List(Variable("p"), Application(Application(ConjunctionOperator(), Variable("𝜑1")), Variable("𝜑2"))))
   )
+
+  // def conjI[I](indices: List[I]) =
+  //   MetaRule("conjI",
+  //     indices.map(i =>
+  //       HMLSatisfies(MetaVariable[S]("p"), MetaVariable(s"𝜑_$i"))
+  //     ),
+  //     HMLSatisfies(MetaVariable[S]("p"), MetaFactoryN(
+  //       indices.map(i => MetaVariable(s"𝜑_$i")),
+  //       indices.map(i => Placeholder(s"𝜑_$i").asInstanceOf[Formula[MetaValuable[A]]]),
+  //       (𝜑s) => And(𝜑s.toSet))
+  //     )
+  // )
 
   // def conjI(s: S, conj: And[A]) = List(MetaRule(
   //   "conjI",
