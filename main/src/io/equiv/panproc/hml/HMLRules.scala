@@ -1,11 +1,11 @@
 package io.equiv.panproc.hml
 
 import io.equiv.panproc.hml.HennessyMilnerLogic.*
-import io.equiv.panproc.ts.WeakTransitionSystem
+import io.equiv.panproc.ts.TransitionSystem
 import io.equiv.panproc.meta.MetaSyntax.*
 import io.equiv.panproc.lambda.Syntax.*
 
-class HMLRules[S, A]:
+class HMLRules[S, A, L](ts: TransitionSystem[S, A, L]):
 
   case class StateLiteral(s: S) extends Literal with DefaultPrettyPrinting(s)
   case class ActionLiteral(a: A) extends Literal with DefaultPrettyPrinting(a)
@@ -27,6 +27,8 @@ class HMLRules[S, A]:
     ),
     MetaJudgment("hml_satisfies", List(Variable("p"), Application(Application(ConjunctionOperator(), Variable("𝜑1")), Variable("𝜑2"))))
   )
+
+  val ltsSteps = ts.step.tupleSet.map { case (s0, a, s1) => MetaAxiom("lts", MetaJudgment("lts_step", List(StateLiteral(s0), ActionLiteral(a), StateLiteral(s1))))}
 
   // def conjI[I](indices: List[I]) =
   //   MetaRule("conjI",

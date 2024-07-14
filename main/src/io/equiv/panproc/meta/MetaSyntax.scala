@@ -66,3 +66,5 @@ object MetaSyntax:
           conclusionJudgment.matchJudgment(goal)
         case _ => None
   }
+
+  def MetaAxiom(name: String, conclusion: MetaExpression) = MetaRule(name, List(), conclusion)
