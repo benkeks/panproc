@@ -15,6 +15,7 @@ object MetaSyntax:
   case class MetaJudgment(name: String, parameters: List[Expression]) extends MetaExpression {
     def pretty: String = s"$name(${parameters.map(_.pretty).mkString(", ")})"
     def prettyTex: String = s"$name(${parameters.map(_.prettyTex).mkString(", ")})"
+    def isClosed() = parameters.forall(_.isClosed())
 
     def substituteAll(substitution: Map[String, Expression]) =
       MetaJudgment(name, parameters.map(lambda.Syntax.substituteAll(_, substitution)))
@@ -23,7 +24,7 @@ object MetaSyntax:
       if (this.name == otherJudgment.name && this.parameters.length == otherJudgment.parameters.length)
         val leftPatterns = this.parameters.map(_ match
             case p: Pattern => Some(p)
-            case appl: Application => Some(appl.toPattern()) 
+            case appl: Application => Some(appl.toPattern())
             case _ => None
         )
         if (leftPatterns.forall(_.isDefined))
@@ -31,8 +32,8 @@ object MetaSyntax:
           for (case (Some(leftPattern), right) <- leftPatterns.zip(otherJudgment.parameters))
             environment = environment.flatMap{ env =>
               val rightInstantiated = lambda.Syntax.substituteAll(right, env)
-              if (PatternMatching.patternCanMatch(leftPattern, rightInstantiated))
-                Some(env ++ PatternMatching.matchPattern(leftPattern, rightInstantiated))
+              if (PatternMatching.patternCanMatch(leftPattern, rightInstantiated, variableNameMatching = false))
+                Some(env ++ PatternMatching.matchPattern(leftPattern, rightInstantiated, variableNameMatching = false))
               else
                 None
             }
