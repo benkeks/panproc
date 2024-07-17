@@ -1,8 +1,8 @@
 package io.equiv.panproc.game
 
-trait ReachabilityGame extends Game with GameLazyDecision[Boolean]:
+import scala.compiletime.ops.boolean
 
-  val initialPositions: Iterable[Game.GameNode]
+trait ReachabilityGame(initialPositions: Iterable[Game.GameNode]) extends Game with GameLazyDecision[Boolean]:
 
   def computeSuccessors(gn: Game.GameNode): Iterable[Game.GameNode]
 
@@ -27,12 +27,23 @@ trait ReachabilityGame extends Game with GameLazyDecision[Boolean]:
 
   def instantAttackerWin(node: GameNode) =
     node match
-      case dn: DefenderNode if successors(node).isEmpty =>
+      //FIXME: Currently, computeSuccessors is thus called twice in game graph exploration.
+      case dn: DefenderNode if computeSuccessors(node).isEmpty =>
         WinPrice
       case _ =>
         None
 
+  def attackerWinningRegion(): Set[Game.GameNode] =
+    attackerVictoryPrices.filter(_._2.nonEmpty).keySet.toSet
+
+  def attackerWins(gn: Game.GameNode): Boolean =
+    isAttackerWinningPrice(gn, true)
+
+  def defenderWins(gn: Game.GameNode): Boolean =
+    !attackerWins(gn)
+
   populateGame(
     initialPositions,
     computeSuccessors(_),
-    instantAttackerWin(_))
+    instantAttackerWin(_)
+  )
