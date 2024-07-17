@@ -24,6 +24,7 @@ object Semantics:
   case class Hole() extends Intermediate:
     override def pretty = "⋅"
     override def prettyTex = "\\cdot"
+    override def freeVariables = Set()
 
   def fillHole(e: Expression, withExpression: Expression): Expression = e match
     case Variable(name) => e

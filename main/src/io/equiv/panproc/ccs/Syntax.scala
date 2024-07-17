@@ -18,6 +18,8 @@ object Syntax:
 
   case class Send(val emitted: Expression, val continuation: Expression) extends ProcessExpression():
 
+    override def freeVariables: Set[String] = emitted.freeVariables ++ continuation.freeVariables
+
     override def pretty =
       val ps = continuation.pretty
       emitted.pretty + "!." + (if ps.contains(" ") then "(" + ps + ")" else ps)
@@ -38,6 +40,7 @@ object Syntax:
         throw Exception(s"Can't suffix a $continuation in CCS.")
 
   case class Receive(val receiver: Lambda) extends ProcessExpression():
+    override def freeVariables: Set[String] = receiver.freeVariables
 
     override def pretty =
       val ps = receiver.term.pretty
@@ -74,6 +77,8 @@ object Syntax:
         val str = procs.map(_.prettyTex).mkString(" + ")
         if str.contains("\\mid") then "(" + str + ")" else str
 
+    override def freeVariables: Set[String] = procs.flatMap(_.freeVariables).toSet
+
 
   case class Parallel(val procs: List[Expression]) extends ProcessExpression():
 
@@ -89,6 +94,8 @@ object Syntax:
       else
         procs.map(_.prettyTex).mkString(" \\mid ")
 
+    override def freeVariables: Set[String] = procs.flatMap(_.freeVariables).toSet
+
 
   case class Restrict(val names: List[Pattern], val proc: Expression)
       extends ProcessExpression():
@@ -100,6 +107,8 @@ object Syntax:
     override def prettyTex =
       val ps = proc.prettyTex
       (if ps.contains(" ") then "(" + ps + ")" else ps) + names.mkString(" \\setminus \\left\\{", ",", "\\right\\}")
+
+    override def freeVariables: Set[String] = proc.freeVariables -- names.flatMap(_.freeVariables).toSet
 
 
   object Notation:

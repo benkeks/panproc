@@ -5,10 +5,10 @@ import io.equiv.panproc.lambda.CallByValueBigStepSemantics.Bind
 
 object PatternMatching:
 
-  def patternCanMatch(pattern: Pattern, expression: Expression): Boolean =
+  def patternCanMatch(pattern: Pattern, expression: Expression, variableNameMatching: Boolean = true): Boolean =
     pattern match
       case Variable(name) =>
-        expression match
+        !variableNameMatching || (expression match
           case Variable(rightName) =>
             name == rightName
           case Bind(env, Variable(rightName)) =>
@@ -16,6 +16,7 @@ object PatternMatching:
             name == rightName
           case _ =>
             true
+        )
       case valuePattern: Literal =>
         valuePattern == expression
       case Constructor(left, right) =>
@@ -28,14 +29,14 @@ object PatternMatching:
           case _ =>
             false
 
-  def matchPattern(pattern: Pattern, expression: Expression): List[(String, Expression)] =
+  def matchPattern(pattern: Pattern, expression: Expression, variableNameMatching: Boolean = true): List[(String, Expression)] =
     pattern match
       case Variable(name) =>
         List(name -> (
           expression match
-            case Variable(rightName) if name != rightName =>
+            case Variable(rightName) if variableNameMatching && (name != rightName) =>
               throw Exception(s"Constructors $pattern and $expression do not match.")
-            case Bind(env, Variable(rightName)) if name != rightName =>
+            case Bind(env, Variable(rightName)) if variableNameMatching && (name != rightName) =>
               //TODO: Likely should check boundedness
               throw Exception(s"Constructors $pattern and $rightName do not match.")
             case _ =>

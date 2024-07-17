@@ -17,6 +17,7 @@ object CallByValueBigStepSemantics:
   case class Bind(env: Environment, term: Expression) extends Intermediate:
     override def pretty = s"{${term.pretty}}"
     override def prettyTex = s"{${term.prettyTex}}"
+    override def freeVariables: Set[String] = term.freeVariables // TODO: hide bound variables and advertise unbound ones in the env image
 
     def unpacked(): Expression = term match
       case b: Bind => b.unpacked()
