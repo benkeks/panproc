@@ -106,16 +106,13 @@ object HPFL:
           yield HPFLCore.app(transformer1, argument1)
     def check[A, V, AV, S, L](
       ltss: List[TransitionSystem[S, A, L]],
+      algorithm: Algorithm = Algorithm.Seq
     ): Option[Relation[S]] =
-      val instance = this.instantiate(ltss)
-      val checked = instance.flatMap(typecheck(_, Ground))
-      checked match
-        case Some(formula) =>
-          val result = eval(formula,  List(), Map(), Map(), ltss)
-          result match
-            case Ok(value) => Some(value)
-            case Error(_) => None
-        case None => None
+      for
+        instance <- this.instantiate(ltss)
+        formula <- typecheck(instance, Ground)
+        result <- eval(formula, ltss, algorithm)
+      yield result
 
   case class Top[AV, V]() extends HPFL[AV, V]
 
