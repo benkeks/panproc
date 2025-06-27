@@ -9,6 +9,7 @@
     "cytoscape": "3.19"
   },
   "scripts": {
-    "update-jar": "mill main.jar && cp out/main/jar.dest/out.jar notebooks/lib/panproc.jar"
+    "update-jar": "mill main.jar && cp out/main/jar.dest/out.jar notebooks/lib/panproc.jar",
+    "update-jar-sbt": "sbt package && cp target/scala-3.2.0/panproc_3-0.1.0-SNAPSHOT.jar notebooks/lib/panproc.jar"
   }
 }
