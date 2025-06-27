@@ -5,6 +5,7 @@ import io.equiv.panproc.lambda.CallByValueBigStepSemantics
 import io.equiv.panproc.lambda.Environment
 import io.equiv.panproc.ccs.Syntax.*
 import io.equiv.panproc.lambda.Syntax.*
+import io.equiv.panproc.lambda.PatternMatching
 import io.equiv.panproc.lambda.CallByValueBigStepSemantics.Bind
 
 object Semantics:
@@ -23,6 +24,7 @@ object Semantics:
   case class Hole() extends Intermediate:
     override def pretty = "⋅"
     override def prettyTex = "\\cdot"
+    override def freeVariables = Set()
 
   def fillHole(e: Expression, withExpression: Expression): Expression = e match
     case Variable(name) => e
@@ -86,7 +88,7 @@ class Semantics(mainExpr: Expression)
               if iP != iQ
               case (SendStep(payload), pContAs) <- initsP
               qContAr <- initsQ.view.collect {
-                case (ReceiveStep(pattern), continuation) if patternCanMatch(pattern, payload) => continuation
+                case (ReceiveStep(pattern), continuation) if PatternMatching.patternCanMatch(pattern, payload) => continuation
               }
               (_, pAs) <- pContAs
               (_, qAr) <- qContAr
@@ -111,9 +113,9 @@ class Semantics(mainExpr: Expression)
             (a, p) <- localSemantics(env)(proc)
             if a match
               case SendStep(payload) =>
-                !restrictedPatterns.exists(patternCanMatch(_, payload))
+                !restrictedPatterns.exists(PatternMatching.patternCanMatch(_, payload))
               case ReceiveStep(pattern: Expression) =>
-                !restrictedPatterns.exists(patternCanMatch(_, pattern))
+                !restrictedPatterns.exists(PatternMatching.patternCanMatch(_, pattern))
               case _ =>
                 true
           yield a -> Restrict(restrictedPatterns, p)

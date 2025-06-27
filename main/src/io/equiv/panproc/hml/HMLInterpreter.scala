@@ -12,17 +12,15 @@ class HMLInterpreter[S, A, L](
   case class HMLAttack(s: S, formula: Formula[A]) extends Game.AttackerNode
   case class HMLDefense(s: S, formula: Formula[A]) extends Game.DefenderNode
 
+
+  def makeNode(s: S, formula: Formula[A]) = formula match
+    case Observe(_, _) | ObserveInternal(_, _) | Negate(And(_)) | Pass(_) =>
+      HMLDefense(s, formula)
+    case And(_) | Negate(_) =>
+      HMLAttack(s, formula)
+
   class HMLFormulaGame(formula: Formula[A], states: Iterable[S])
-      extends ReachabilityGame:
-
-    override val initialPositions: Iterable[Game.GameNode] =
-      for s <- states yield makeNode(s, formula)
-
-    def makeNode(s: S, formula: Formula[A]) = formula match
-      case Observe(_, _) | ObserveInternal(_, _) | Negate(And(_)) | Pass(_) =>
-        HMLDefense(s, formula)
-      case And(_) | Negate(_) =>
-        HMLAttack(s, formula)
+      extends ReachabilityGame(for s <- states yield makeNode(s, formula)):
 
     override def computeSuccessors(gn: Game.GameNode): Iterable[Game.GameNode] = gn match
       case HMLAttack(s, And(subterms)) =>
@@ -66,5 +64,5 @@ class HMLInterpreter[S, A, L](
       for
         s <- states
       yield s ->
-        interpretationGame.attackerVictoryPrices(interpretationGame.makeNode(s, f)).nonEmpty
+        interpretationGame.attackerVictoryPrices(makeNode(s, f)).nonEmpty
     result.toMap

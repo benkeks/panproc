@@ -10,6 +10,11 @@ object HennessyMilnerLogic:
 
     def isImmediate: Boolean
 
+
+  case class Placeholder[A](name: String) extends Formula[A]:
+    def isPositive: Boolean = false
+    def isImmediate: Boolean = false
+
   case class And[A](subterms: Set[Formula[A]]) extends Formula[A]:
 
     override def toString =
