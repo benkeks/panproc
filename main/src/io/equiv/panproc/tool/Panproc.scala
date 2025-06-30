@@ -9,30 +9,19 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
 
 @main def panproc() =
 
-  val lambdaProg = let.rec(
-    a = λ("x")("b"("x")),
-    b = λ("x")("x"),
-    "a"("a")
-  )
+  val lambdaProg =
+    λ("x")("x"("x"))(λ("y")("b"("y"))("z"))
+  println(lambda.CallByNameSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+  println(lambda.CallByValueSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+  //println(Semantics(ccsProg).semantics())
 
-  val constructorTest = let.rec(
-    myObject = "Cons"(1)(2),
-    myProjection = λ("Cons"("x")("y"))("y"),
-    "myProjection"("myObject")
-  )
 
-  val ccsProg = let.rec(
-    P1 =  λ("x")(send("hello") * subProcess("P2") + receive("stop") * nullProcess),
-    P2 =  λ("x")(send("reload") * (receive("hello") * subProcess("P1"))),
-    (subProcess("P1") | subProcess("P2")) \ Set("hello")
-  )
 
-  val ccsIterProg = let.rec(
-    P1 = λ("x")(send("world") * subProcess("P1")),
-    subProcess("P1")
-  )
-  //println(lambda.CallByValueBigStepSemantics(ccsIterProg).asTransitionSystem())
-  println(Semantics(ccsProg).semantics())
+  // val letRecProg = let.rec(
+  //   a = λ("x")("b"("x")),
+  //   b = λ("x")("x"),
+  //   "a"("a")
+  // )
 
   //println(lambda.CallByValueSemantics(lambdaProg).asTransitionSystem().toMermaid(prettyPrint = _.pretty))
 

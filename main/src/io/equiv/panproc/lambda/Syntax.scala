@@ -35,7 +35,11 @@ object Syntax:
     override def freeVariables = term.freeVariables -- variable.freeVariables
 
   case class Application(function: Expression, argument: Expression) extends Expression:
-    override def pretty = s"${function.pretty} ${argument.pretty}"
+    override def pretty =
+      if (argument.isInstanceOf[Application]) then
+        s"${function.pretty} (${argument.pretty})"
+      else
+        s"${function.pretty} ${argument.pretty}"
     override def prettyTex = s"${function.prettyTex} \\left( ${argument.prettyTex} \\right)"
     override def freeVariables = function.freeVariables ++ argument.freeVariables
 

@@ -56,9 +56,9 @@ case class TransitionSystem[S, A, L](
 
   def isFreshNode(s: S) = !nodes.contains(s)
 
-  def toMermaid(prettyPrint: S => String = _.toString()): String =
+  def toMermaid(prettyPrint: L => String = _.toString()): String =
     def slugify(str: String) = str.replaceAll("[^a-zA-Z\\d]", "")
     "flowchart TD\n    " +
       step.tupleSet.map { case (src, a, tar) =>
-        s"${slugify(src.toString())}[\"${prettyPrint(src)}\"] -- $a --> ${slugify(tar.toString())}[\"${prettyPrint(tar)}\"]"
+        s"${slugify(src.toString())}[\"${prettyPrint(nodeLabeling(src))}\"] -- $a --> ${slugify(tar.toString())}[\"${prettyPrint(nodeLabeling(tar))}\"]"
       }.mkString("\n    ")
