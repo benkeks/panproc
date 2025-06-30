@@ -17,7 +17,7 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
   println("Lambda Program:")
   println(lambdaProg.pretty)
 
-  println("CBV:")
+  println("\nCBV:")
   println(lambda.CallByValueSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
 
   val cbpv1 = lambda.CallByPushValueSimpSemantics.encodeCallByValue(lambdaProg)
@@ -25,8 +25,13 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
   println(cbpv1.pretty)
   println(lambda.CallByPushValueSimpSemantics(cbpv1).asTransitionSystem().toMermaid())
 
-  // println(lambda.CallByNameSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
-
+  println("\nCBN:")
+  println(lambda.CallByNameSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+  val cbpv2 = lambda.CallByPushValueSimpSemantics.encodeCallByName(lambdaProg)
+  println("CBPV for CBN:")
+  println(cbpv2.pretty)
+  println(lambda.CallByPushValueSimpSemantics(cbpv2).asTransitionSystem().toMermaid())
+  
 
 
   //println(Semantics(ccsProg).semantics())

@@ -59,6 +59,22 @@ object CallByPushValueSimpSemantics:
       case other =>
         Thunk(other)
 
+  def encodeCallByName(expr: Expression): Expression =
+    expr match
+      case Lambda(variable, term) =>
+        Lambda(variable, encodeCallByName(term))
+      case Application(function, argument) =>
+        Application(
+          encodeCallByName(function),
+          Thunk(
+            encodeCallByName(argument)
+          )
+        )
+      case Variable(name) =>
+        Force(Variable(name))
+      case other =>
+        Thunk(other)
+
 class CallByPushValueSimpSemantics(expr: Expression)
     extends AbstractOperationalSemantics[
       Expression,
