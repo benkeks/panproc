@@ -25,6 +25,7 @@ object Semantics:
     override def pretty = "⋅"
     override def prettyTex = "\\cdot"
     override def freeVariables = Set()
+    override def substituteAll(fillIns: Map[String, Expression]): Expression = this
 
   def fillHole(e: Expression, withExpression: Expression): Expression = e match
     case Variable(name) => e

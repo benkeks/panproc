@@ -18,6 +18,7 @@ object CallByValueBigStepSemantics:
     override def pretty = s"{${term.pretty}}"
     override def prettyTex = s"{${term.prettyTex}}"
     override def freeVariables: Set[String] = term.freeVariables // TODO: hide bound variables and advertise unbound ones in the env image
+    override def substituteAll(fillIns: Map[String, Expression]): Bind = this
 
     def unpacked(): Expression = term match
       case b: Bind => b.unpacked()

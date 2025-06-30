@@ -39,7 +39,7 @@ class CallByNameSimpSemantics(expr: Expression)
     e match
       case Application(Lambda(Variable(name), funTerm), argument) =>
         List(
-          (Step(), Syntax.substituteAll(funTerm, Map(name -> argument)))
+          (Step(), funTerm.substituteAll(Map(name -> argument)))
         )
       case Application(function, argument) =>
         for

@@ -39,6 +39,9 @@ object Syntax:
       case _ =>
         throw Exception(s"Can't suffix a $continuation in CCS.")
 
+    override def substituteAll(fillIns: Map[String, Expression]): Send =
+      Send(emitted.substituteAll(fillIns), continuation.substituteAll(fillIns))
+
   case class Receive(val receiver: Lambda) extends ProcessExpression():
     override def freeVariables: Set[String] = receiver.freeVariables
 
@@ -61,6 +64,8 @@ object Syntax:
       case _ =>
         throw Exception(s"Can't suffix a ${receiver.term} in CCS.")
 
+    override def substituteAll(fillIns: Map[String, Expression]): Receive =
+      Receive(receiver.substituteAll(fillIns))
   case class Choice(val procs: List[Expression]) extends ProcessExpression():
 
     override def pretty =
@@ -79,6 +84,9 @@ object Syntax:
 
     override def freeVariables: Set[String] = procs.flatMap(_.freeVariables).toSet
 
+    override def substituteAll(fillIns: Map[String, Expression]): Choice =
+      Choice(procs.map(_.substituteAll(fillIns)))
+
 
   case class Parallel(val procs: List[Expression]) extends ProcessExpression():
 
@@ -96,6 +104,9 @@ object Syntax:
 
     override def freeVariables: Set[String] = procs.flatMap(_.freeVariables).toSet
 
+    override def substituteAll(fillIns: Map[String, Expression]): Parallel =
+      Parallel(procs.map(_.substituteAll(fillIns)))
+
 
   case class Restrict(val names: List[Pattern], val proc: Expression)
       extends ProcessExpression():
@@ -110,6 +121,8 @@ object Syntax:
 
     override def freeVariables: Set[String] = proc.freeVariables -- names.flatMap(_.freeVariables).toSet
 
+    override def substituteAll(fillIns: Map[String, Expression]): Restrict =
+      Restrict(names, proc.substituteAll(fillIns))
 
   object Notation:
 

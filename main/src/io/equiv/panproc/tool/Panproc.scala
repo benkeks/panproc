@@ -10,9 +10,25 @@ import io.equiv.panproc.lambda.Syntax.Notation.{_, given}
 @main def panproc() =
 
   val lambdaProg =
-    λ("x")("x"("x"))(λ("y")("b"("y"))("z"))
-  println(lambda.CallByNameSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+    λ("y")("y")("z") 
+    // λ("x")("y")(λ("z")("z")("q")) Ex from paper
+    //    λ("x")("x"("x"))(λ("y")("b"("y"))("z"))
+
+  println("Lambda Program:")
+  println(lambdaProg.pretty)
+
+  println("CBV:")
   println(lambda.CallByValueSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+
+  val cbpv1 = lambda.CallByPushValueSimpSemantics.encodeCallByValue(lambdaProg)
+  println("CBPV for CBV:")
+  println(cbpv1.pretty)
+  println(lambda.CallByPushValueSimpSemantics(cbpv1).asTransitionSystem().toMermaid())
+
+  // println(lambda.CallByNameSimpSemantics(lambdaProg).asTransitionSystem().toMermaid())
+
+
+
   //println(Semantics(ccsProg).semantics())
 
 

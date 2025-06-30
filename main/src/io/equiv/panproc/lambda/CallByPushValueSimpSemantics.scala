@@ -4,7 +4,7 @@ import io.equiv.panproc.ts.{AbstractOperationalSemantics}
 import io.equiv.panproc.lambda.Syntax.*
 import io.equiv.panproc.lambda.PatternMatching
 
-object CallByPushValueSimpSemantcs:
+object CallByPushValueSimpSemantics:
   abstract class EdgeLabel
   case class Step() extends EdgeLabel:
     override def toString(): String = "*"
@@ -17,32 +17,58 @@ object CallByPushValueSimpSemantcs:
     override def pretty = s"${monad.pretty} >>= ${lambda.pretty}"
     override def prettyTex = s"${monad.prettyTex} >>= ${lambda.prettyTex}"
     override def freeVariables: Set[String] = monad.freeVariables ++ lambda.freeVariables
+    override def substituteAll(fillIns: Map[String, Expression]): Bind =
+      Bind(monad.substituteAll(fillIns), lambda.substituteAll(fillIns))
 
   case class Force(inner: Expression) extends Intermediate:
-    override def pretty = s"force ${inner.pretty}"
-    override def prettyTex = s"force ${inner.prettyTex}"
+    override def pretty = s"(force ${inner.pretty})"
+    override def prettyTex = s"(force ${inner.prettyTex})"
     override def freeVariables: Set[String] = inner.freeVariables
+    override def substituteAll(fillIns: Map[String, Expression]): Force =
+      Force(inner.substituteAll(fillIns))
 
   case class Return(inner: Expression) extends Intermediate:
     override def pretty = s"return ${inner.pretty}"
     override def prettyTex = s"return ${inner.prettyTex}"
     override def freeVariables: Set[String] = inner.freeVariables
+    override def substituteAll(fillIns: Map[String, Expression]): Return =
+      Return(inner.substituteAll(fillIns))
 
   case class Thunk(inner: Expression) extends Intermediate:
     override def pretty = s"thunk ${inner.pretty}"
     override def prettyTex = s"thunk ${inner.prettyTex}"
     override def freeVariables: Set[String] = inner.freeVariables
+    override def substituteAll(fillIns: Map[String, Expression]): Thunk =
+      Thunk(inner.substituteAll(fillIns))
 
-class CallByPushValueSimpSemantcs(expr: Expression)
+  def encodeCallByValue(expr: Expression): Expression =
+    expr match
+      case Lambda(variable, term) =>
+        Return(Thunk(Lambda(variable, encodeCallByValue(term))))
+      case Application(function, argument) =>
+        Bind(encodeCallByValue(function),
+          Lambda(Variable("_f"),
+            Bind(
+              encodeCallByValue(argument),
+              Lambda(Variable("_x"), Application(Force(Variable("_f")), Variable("_x")))
+            )
+          )
+        )
+      case Variable(name) =>
+        Return(Variable(name))
+      case other =>
+        Thunk(other)
+
+class CallByPushValueSimpSemantics(expr: Expression)
     extends AbstractOperationalSemantics[
       Expression,
       Map[String,String],
       Expression,
-      CallByPushValueSimpSemantcs.EdgeLabel,
-      CallByPushValueSimpSemantcs.NodeLabel
+      CallByPushValueSimpSemantics.EdgeLabel,
+      CallByPushValueSimpSemantics.NodeLabel
     ](expr):
 
-  import CallByPushValueSimpSemantcs.*
+  import CallByPushValueSimpSemantics.*
 
   override def stateIds(ex: Expression) = ex
 
@@ -57,19 +83,29 @@ class CallByPushValueSimpSemantcs(expr: Expression)
 
   override def localSemantics(env: Map[String,String])(e: Expression): Iterable[(EdgeLabel, Expression)] =
     e match
-      case Bind(Return(inner), Lambda(Variable(name), funTerm)) if isValue(inner) =>
+      case Bind(Return(inner), Lambda(Variable(name), funTerm)) =>
         List(
-          (Step(), Syntax.substituteAll(funTerm, Map(name -> inner)))
+          (Step(), funTerm.substituteAll(Map(name -> inner)))
+        )
+      case Bind(first, Lambda(Variable(name), funTerm)) =>
+        (for 
+            (step, newFirst) <- localSemantics(env)(first)
+          yield
+            (step, Bind(newFirst, Lambda(Variable(name), funTerm)))
         )
       case Application(Lambda(Variable(name), funTerm), argument) if isValue(argument) =>
         List(
-          (Step(), Syntax.substituteAll(funTerm, Map(name -> argument)))
+          (Step(), funTerm.substituteAll(Map(name -> argument)))
         )
       case Application(function, argument) =>
         ( for
             (step, newFun) <- localSemantics(env)(function)
           yield
             (step, Application(newFun, argument))
+        )
+      case Force(Thunk(inner)) =>
+        List(
+          (Step(), inner)
         )
       case otherTerm =>
         List()

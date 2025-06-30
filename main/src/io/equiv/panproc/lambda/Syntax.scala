@@ -8,6 +8,7 @@ object Syntax:
     def prettyTex: String
     def freeVariables: Set[String]
     def isClosed() = (freeVariables.isEmpty)
+    def substituteAll(fillIns: Map[String, Expression]): Expression
 
   trait DefaultPrettyPrinting(boxed: Any):
     def pretty: String = boxed.toString()
@@ -23,6 +24,7 @@ object Syntax:
     def pretty: String = name
     def prettyTex: String = s"\\mathit{$name}"
     def freeVariables = Set(name)
+    def substituteAll(fillIns: Map[String, Expression]): Expression = fillIns.getOrElse(name, this)
 
   case class Constructor(left: Pattern, right: Pattern) extends Pattern:
     override def pretty: String = s"(${left.pretty} ${right.pretty})"
@@ -33,15 +35,30 @@ object Syntax:
     override def pretty = s"(λ${variable.pretty}. ${term.pretty})"
     override def prettyTex = s"(\\lambda ${variable.prettyTex} \\ldotp  ${term.prettyTex})"
     override def freeVariables = term.freeVariables -- variable.freeVariables
+    def substituteAll(fillIns: Map[String, Expression]): Lambda = Lambda(
+      variable match
+        case Variable(name) if fillIns.isDefinedAt(name) => 
+          throw Exception(s"Variable substitution failed for ${variable.pretty}")
+        case _ => variable,
+      term.substituteAll(fillIns)
+    )
 
   case class Application(function: Expression, argument: Expression) extends Expression:
+
     override def pretty =
-      if (argument.isInstanceOf[Application]) then
+      if (!argument.isInstanceOf[Lambda] && !argument.isInstanceOf[Variable]) then
         s"${function.pretty} (${argument.pretty})"
       else
         s"${function.pretty} ${argument.pretty}"
+    
     override def prettyTex = s"${function.prettyTex} \\left( ${argument.prettyTex} \\right)"
+
     override def freeVariables = function.freeVariables ++ argument.freeVariables
+
+    def substituteAll(fillIns: Map[String, Expression]): Application = Application(
+      function.substituteAll(fillIns),
+      argument.substituteAll(fillIns)
+    )
 
     def toPattern(): Pattern =
       Constructor(
@@ -72,9 +89,15 @@ object Syntax:
     override def pretty = s"letrec ${definitions.map(_.pretty).mkString("; ")} in ${in.pretty}"
     override def prettyTex = s"\\mathsf{let rec}\\\\\\quad ${definitions.map(_.prettyTex).mkString(" \\\\\\quad ")} \\\\ \\mathsf{in}\\; ${in.prettyTex}"
     override def freeVariables = in.freeVariables ++ definitions.flatMap(_.freeVariables) -- definitions.flatMap(_.boundVariables)
+    def substituteAll(fillIns: Map[String, Expression]): Expression =
+      LetRec(
+        definitions.map { case Definition(pattern, value) => Definition(pattern, value.substituteAll(fillIns)) },
+        in.substituteAll(fillIns)
+      )
 
   abstract class Literal extends Expression, Pattern:
     override def freeVariables: Set[String] = Set()
+    override def substituteAll(fillIns: Map[String, Expression]): Expression = this
 
   case class Number(number: Int) extends Literal:
     override def pretty: String = number.toString()
@@ -85,17 +108,6 @@ object Syntax:
     override def prettyTex: String = "()"
 
   trait Intermediate extends Expression
-
-  // does not check for name clashes (for now)!
-  def substituteAll(expression: Expression, fillIns: Map[String, Expression]): Expression =
-    expression match
-      case Variable(name) if fillIns.isDefinedAt(name) => fillIns(name)
-      case Lambda(variable, term) => Lambda(variable, substituteAll(term, fillIns))
-      case Application(function, argument) => Application(substituteAll(function, fillIns), substituteAll(argument, fillIns))
-      case LetRec(definitions, in) => LetRec(
-        definitions.map { case Definition(pattern, value) => Definition(pattern, substituteAll(value, fillIns)) },
-        substituteAll(in, fillIns))
-      case other => other
 
   object Notation:
 

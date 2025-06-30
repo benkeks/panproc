@@ -18,7 +18,7 @@ object MetaSyntax:
     def isClosed() = parameters.forall(_.isClosed())
 
     def substituteAll(substitution: Map[String, Expression]) =
-      MetaJudgment(name, parameters.map(lambda.Syntax.substituteAll(_, substitution)))
+      MetaJudgment(name, parameters.map(_.substituteAll(substitution)))
 
     def matchJudgment(otherJudgment: MetaJudgment): Option[Map[String, Expression]] =
       if (this.name == otherJudgment.name && this.parameters.length == otherJudgment.parameters.length)
@@ -31,7 +31,7 @@ object MetaSyntax:
           var environment: Option[Map[String, Expression]] = Some(Map[String, Expression]())
           for (case (Some(leftPattern), right) <- leftPatterns.zip(otherJudgment.parameters))
             environment = environment.flatMap{ env =>
-              val rightInstantiated = lambda.Syntax.substituteAll(right, env)
+              val rightInstantiated = right.substituteAll(env)
               if (PatternMatching.patternCanMatch(leftPattern, rightInstantiated, variableNameMatching = false))
                 Some(env ++ PatternMatching.matchPattern(leftPattern, rightInstantiated, variableNameMatching = false))
               else
